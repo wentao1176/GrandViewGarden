@@ -93,21 +93,46 @@ node tools/qa.mjs               # 全量截图审查（24 景点 + 晨/暮/夜 +
 
 构建后的 `index.html` 即为最终交付：可直接分发、离线打开，也可直接部署到任意静态托管（GitHub Pages 等）。
 
-## 五、操作方式
+## 五、部署到 GitHub Pages
+
+仓库已为 Pages 静态托管做好准备：根目录 `index.html` 是构建产物（单文件、全部资源内联），并已放置 `.nojekyll`（跳过 Jekyll 处理，避免下划线开头资源被忽略）。
+
+**方式 A：分支部署（推荐，无需 CI）**
+
+1. 打开仓库 **Settings → Pages**；
+2. **Build and deployment → Source** 选择 **Deploy from a branch**；
+3. **Branch** 选 `main`，目录选 **`/ (root)`**，点 **Save**；
+4. 等待约 1–3 分钟，访问 **https://wentao1176.github.io/GrandViewGarden/**。
+
+之后每次更新：`npm run build` 重新生成 `index.html` → `git add/commit/push`，Pages 会自动重新发布。
+
+**方式 B：GitHub Actions（可选，推送源码自动构建）**
+
+若希望每次推送由 CI 构建发布：**Settings → Pages → Source** 选 **GitHub Actions**，再加入一个 workflow（`actions/checkout` → `npm ci` → `npm run build` → `actions/upload-pages-artifact` → `actions/deploy-pages`）。需要的话可以补上现成 workflow 文件。
+
+**本地模拟 Pages 子路径**（验证项目站点 `/GrandViewGarden/` 下的表现）：
+
+```bash
+node tools/serve-pages.mjs     # 打开 http://127.0.0.1:8099/GrandViewGarden/
+```
+
+> 提示：仓库需为公开（当前已公开）；首次开启 Pages 后发布可能需要 1–3 分钟；如绑定自定义域名，再在 Pages 设置中填写并配置 DNS/CNAME。
+
+## 六、操作方式
 
 - **PC**：左键拖拽旋转，右键/中键拖拽平移，滚轮缩放；点击景点目录或小地图飞行前往。
 - **移动端**：单指拖拽旋转，双指捏合缩放/平移；左下小地图可点击。
 - **快捷键**：`1/2/3/4` 晨/昼/暮/夜，`T` 漫游，`L` 地名标签，`H` 赏景模式，`Esc` 关闭弹层/信息卡，`?` 帮助。
 - 右侧/底部按钮：景点目录、时段、漫游、标签、全屏、说明。
 
-## 六、考据说明
+## 七、考据说明
 
 - 空间与文本依据见 [`docs/research.md`](docs/research.md)：以《红楼梦》第 16/17/18/23/27/38/40/41/62 回原文为主（A 级），辅以红学通行复原（B 级）与建模取舍（C 级）。
 - 中轴不可弯、四院方位、沁芳溪单线连通、三处地形关系（大主山分支穿蘅芜苑、花溆云步石梯、翠嶂障景）、匾联改题关系等硬约束均在模型中体现。
 - 「三里半大」折算取约 13.6 公顷量级；园内平面以 1 体素 ≈ 1 米抽象重建，建筑尺度按清式民居/官式建筑参数适度归纳，**非测绘复原**，属文学园林的数字艺术诠释。
 - 引文以识典古籍整理本逐字核对；部分回目为节引，已在文档中标注。
 
-## 七、致谢与许可
+## 八、致谢与许可
 
 - 文本：《红楼梦》（曹雪芹著，公有领域）。
 - 灵感与考据参考：周汝昌、冯其庸、杨乃济等红学前辈的大观园研究，以及北京大观园（1984–1988）的复原实践。

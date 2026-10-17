@@ -9,6 +9,7 @@
     "dev": "node scripts/dev.mjs",
     "preview": "node tools/preview.mjs",
     "qa": "node tools/qa.mjs",
+    "serve:pages": "node tools/serve-pages.mjs",
     "shot": "node tools/screenshot.mjs"
   },
   "devDependencies": {
