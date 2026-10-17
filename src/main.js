@@ -192,12 +192,12 @@ async function boot() {
       }
     } else if (!params.has('shot')) {
       // 默认开场：南门外远望正门，随后缓慢推进（电影感入场）
-      controls.setView({ target: [0, 12, 138], theta: 0.02, phi: 1.26, radius: 168 }, true);
+      controls.setView({ target: [0, 10, 138], theta: 0.02, phi: 1.27, radius: 132 }, true);
       if (params.get('intro') !== '0') {
         setTimeout(() => {
           if (!controls || controls.userInteracted) return;
-          controls.flyTo({ target: [0, 12, 140], theta: 0.03, phi: 1.29, radius: 92 }, 7200);
-        }, 1800);
+          controls.flyTo({ target: [0, 10, 140], theta: 0.03, phi: 1.3, radius: 84 }, 6500);
+        }, 1400);
       }
     }
     if (params.get('ui') === '0') document.body.classList.add('ui-hidden');
