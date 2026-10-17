@@ -1,0 +1,19 @@
+{
+  "name": "grand-view-garden",
+  "version": "1.0.0",
+  "private": true,
+  "description": "3D voxel reconstruction of the Grand View Garden (大观园) from Dream of the Red Chamber",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/dev.mjs",
+    "preview": "node tools/preview.mjs",
+    "qa": "node tools/qa.mjs",
+    "shot": "node tools/screenshot.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0",
+    "puppeteer-core": "23.11.1",
+    "three": "0.169.0"
+  }
+}
