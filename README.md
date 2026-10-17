@@ -2,8 +2,8 @@
 
 > 依《红楼梦》原文与红学考据复原的**大观园三维体素园林**。纯前端、零依赖后端、单文件可离线打开，PC 与移动端浏览器均可漫游。
 
-**在线访问（GitHub Pages）**：`https://wentao1176.github.io/GrandViewGarden/`
-**本地打开**：直接双击仓库根目录的 `index.html`（无需服务器），或用 `npm run dev` 起本地服务。
+**在线访问（GitHub Pages）**：在仓库 Settings → Pages 中选择 `main` 分支根目录（或 GitHub Actions）启用后，即可访问 `https://wentao1176.github.io/GrandViewGarden/`
+**本地打开**：直接双击仓库根目录的 `index.html`（无需服务器、无需联网），或用 `npm run dev` 起本地服务。
 
 ---
 
