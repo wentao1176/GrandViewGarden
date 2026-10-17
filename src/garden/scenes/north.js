@@ -231,7 +231,7 @@ export function buildNorth(ctx) {
   // ═══════════════════════════════════════════════════════════════════════════
   {
     // ── 2.1 院墙（水磨砖墙，随地形起伏；南山墙开月洞门）──
-    const WH = 4, WT = 1;
+    const WH = 5, WT = 1;
     wallRun(33, -117, 33, -97, { h: WH, th: WT });              // 西墙
     wallRun(60, -117, 60, -97, { h: WH, th: WT });              // 东墙（兼挡土墙，内侧显矮）
     wallRun(33, -117, 59, -117, { h: WH, th: WT });             // 北墙（嵌入山石）
@@ -242,29 +242,29 @@ export function buildNorth(ctx) {
     support(42, -97 - 1, 9, C.marbleShade, C.stoneWarm);
     // 墙帽上的瓦垄已由 wallRun 完成
 
-    // ── 2.2 五间清厦 · 卷棚 · 四面出廊 ──
+    // ── 2.2 五间清厦 · 卷棚 · 四面出廊（HD：檐高+1、柱高+1）──
     const hall = H.hall({
       x: 47, z: -108, bays: 5, bayW: 4, depth: 11, y: 9,
       plinthH: 2, plinthC: C.stone, plinthTop: C.stoneWarm,
-      wallH: 4, columnH: 4, roof: 'gableRound', tile: C.roof, roofH: 3,
+      wallH: 5, columnH: 5, roof: 'gableRound', tile: C.roof, roofH: 3,
       columns: C.woodDark, wall: C.whitewall, doorC: C.woodDark,
       plaque: '蘅芷清芬',
       couplets: ['吟成豆蔻詩猶艷', '睡足荼蘼夢也香'],
       stepDir: 'south', interior: true,
     });
-    // 四面出廊：沿台基外缘加一圈檐柱（支住出檐）
+    // 四面出廊：沿台基外缘加一圈檐柱（支住出檐，随主体加高）
     const pTop = 10; // 台基顶面体素索引
     for (const px of [35, 59]) {
-      for (let pz = -114; pz <= -102; pz += 4) H.column(px, pz, pTop + 1, 4, C.woodDark);
+      for (let pz = -114; pz <= -102; pz += 4) H.column(px, pz, pTop + 1, 5, C.woodDark);
     }
     for (const pz of [-115, -101]) {
-      for (let px = 37; px <= 57; px += 4) H.column(px, pz, pTop + 1, 4, C.woodDark);
+      for (let px = 37; px <= 57; px += 4) H.column(px, pz, pTop + 1, 5, C.woodDark);
     }
     // 廊下矮栏（东西两侧）
     H.railing({ x1: 36, z1: -114, x2: 36, z2: -102, y: pTop + 1, h: 1, style: 'wood', c: C.redRail });
     H.railing({ x1: 58, z1: -114, x2: 58, z2: -102, y: pTop + 1, h: 1, style: 'wood', c: C.redRail });
-    // 卷棚绿窗油壁：前檐下加绿色帘幕意象
-    for (let px = 38; px <= 56; px += 3) {
+    // 卷棚绿窗油壁：前檐两侧加绿色帘幕意象（让开月洞门/正门通道）
+    for (const px of [38, 41, 53, 56]) {
       for (let yy = 12; yy <= 13; yy++) w.setIfEmpty(px, yy, hall.z2 + 1, C.windowGreen);
     }
 
@@ -332,10 +332,10 @@ export function buildNorth(ctx) {
       const ty = w.topY(x, -86);
       if (ty > 8) drape(x, -85, ty + 1, 3 + ((x & 1) ? 1 : 0), [C.leafDark, C.leaf, C.leafYellow], x + 5);
     }
-    // 墙头藤萝架（F.vine 铺顶、垂藤）
-    F.vine({ x1: 34, z1: -97, x2: 58, z2: -97, y: 14, leafC: C.leafDark, topC: [C.leafYellow, C.leaf] });
-    F.vine({ x1: 34, z1: -117, x2: 58, z2: -117, y: 14, leafC: C.leaf, topC: [C.leafDark, C.leafYellow] });
-    F.vine({ x1: 34, z1: -101, x2: 34, z2: -113, y: 13, leafC: C.leafDark, topC: [C.leafLight] });
+    // 墙头藤萝架（F.vine 铺顶、垂藤；随院墙加高上移）
+    F.vine({ x1: 34, z1: -97, x2: 58, z2: -97, y: 16, leafC: C.leafDark, topC: [C.leafYellow, C.leaf] });
+    F.vine({ x1: 34, z1: -117, x2: 58, z2: -117, y: 16, leafC: C.leaf, topC: [C.leafDark, C.leafYellow] });
+    F.vine({ x1: 34, z1: -101, x2: 34, z2: -113, y: 15, leafC: C.leafDark, topC: [C.leafLight] });
     // 墙脚、阶畔香草（杜若、蘅芜、茝兰之意）
     for (const [hx, hz] of [[36, -96], [39, -96], [47, -96], [52, -96], [56, -96], [34, -114], [34, -108], [58, -114], [58, -108], [38, -100], [56, -100]]) {
       if (!water(hx, hz)) F.shrub(hx, hz, { r: 1 + ((hx + hz) & 1), c: [C.leafLight, C.leaf, C.vegetable, C.leafYellow] });
@@ -368,11 +368,11 @@ export function buildNorth(ctx) {
     // ── 3.1 石洞：跨港石拱（北墩接蘅芜苑崖、南墩落南岸）──
     H.rockery({ x1: 32, z1: -98, x2: 39, z2: -94, h: 13, y: 7, seed: 71 });
     H.rockery({ x1: 32, z1: -88, x2: 41, z2: -83, h: 12, y: 2, seed: 72 });
-    // 洞顶石梁（下留 6 格净空）
+    // 洞顶石梁（下留 6 格净空；HD：拱背加厚抬高）
     for (let z = -93; z <= -87; z++) {
       for (let x = 32; x <= 40; x++) {
         const nd = Math.abs(z + 90) / 4;
-        const top = 13 - Math.round(nd * 2) + ((x * 3 + z) % 3 === 0 ? 1 : 0);
+        const top = 15 - Math.round(nd * 2) + ((x * 3 + z) % 3 === 0 ? 1 : 0);
         for (let yy = 10; yy <= top; yy++) w.set(x, yy, z, yy === 10 ? C.rockDark : pick([C.rock, C.rockDark, C.rockLight]));
       }
     }
@@ -381,12 +381,12 @@ export function buildNorth(ctx) {
       for (let x = 32; x <= 33; x++) w.set(x, 8, z, C.rockDark);
     }
     // 萝薜倒垂（洞顶与南墩）
-    drapeRun(34, -92, 39, -92, 10, 6, [C.leafDark, C.leaf, C.leafYellow], 5);
-    drapeRun(34, -91, 39, -91, 10, 5, [C.leafDark, C.leaf], 6);
-    drapeRun(34, -86, 40, -86, 12, 6, [C.leafDark, C.leafYellow, C.leaf], 7);
+    drapeRun(34, -92, 39, -92, 10, 7, [C.leafDark, C.leaf, C.leafYellow], 5);
+    drapeRun(34, -91, 39, -91, 10, 6, [C.leafDark, C.leaf], 6);
+    drapeRun(34, -86, 40, -86, 13, 6, [C.leafDark, C.leafYellow, C.leaf], 7);
     // 藤萝垂挂（F.vine 于洞顶）
-    F.vine({ x1: 33, z1: -89, x2: 40, z2: -89, y: 15, leafC: C.leafDark, topC: [C.leafYellow, C.leafLight] });
-    F.vine({ x1: 33, z1: -85, x2: 40, z2: -85, y: 14, leafC: C.leaf, topC: [C.leafDark] });
+    F.vine({ x1: 33, z1: -89, x2: 40, z2: -89, y: 17, leafC: C.leafDark, topC: [C.leafYellow, C.leafLight] });
+    F.vine({ x1: 33, z1: -85, x2: 40, z2: -85, y: 16, leafC: C.leaf, topC: [C.leafDark] });
 
     // ── 3.2 题字石「蓼汀花溆」（南墩石壁，实砌落地，外凸一格题字）──
     for (let x = 33; x <= 41; x++) support(x, -82, 11, C.rock, C.rockDark);
@@ -438,11 +438,11 @@ export function buildNorth(ctx) {
   // ═══════════════════════════════════════════════════════════════════════════
   {
     const CY = 10; // 台地 elev9 → 台基第一层 y=10
-    // ── 4.1 院墙（白墙灰瓦）──
-    wallRun(78, -142, 78, -116, { h: 4, th: 2, gates: [{ a: -127, b: -122 }] });  // 西墙（北径来处留侧门）
-    wallRun(106, -142, 106, -117, { h: 4, th: 2 });                              // 东墙（贴东山）
-    wallRun(78, -142, 106, -142, { h: 4, th: 2 });                               // 北墙（嵌山）
-    wallRun(78, -116, 103, -116, { h: 4, th: 2, gates: [{ a: 84, b: 92 }] });    // 南墙·留山门
+    // ── 4.1 院墙（白墙灰瓦，HD 加高一格）──
+    wallRun(78, -142, 78, -116, { h: 5, th: 2, gates: [{ a: -127, b: -122 }] });  // 西墙（北径来处留侧门）
+    wallRun(106, -142, 106, -117, { h: 5, th: 2 });                              // 东墙（贴东山）
+    wallRun(78, -142, 106, -142, { h: 5, th: 2 });                               // 北墙（嵌山）
+    wallRun(78, -116, 103, -116, { h: 5, th: 2, gates: [{ a: 84, b: 92 }] });    // 南墙·留山门
 
     // ── 4.2 山门（一间小门楼，匾「苦海慈航」）──
     {
@@ -450,26 +450,24 @@ export function buildNorth(ctx) {
       H.plinth({ x: gx, z: gz, w: 6, d: 3, y: CY, h: 1, c: C.stone, top: C.stoneWarm, step: 0 });
       const fY = CY + 1; // 11
       // 柱
-      for (const px of [gx - 5, gx, gx + 5]) for (const pz of [-121, -115]) H.column(px, pz, fY, 6, C.redPillar);
+      for (const px of [gx - 5, gx, gx + 5]) for (const pz of [-121, -115]) H.column(px, pz, fY, 4, C.redPillar);
       // 后墙、侧墙
-      for (let x = gx - 5; x <= gx + 5; x++) for (let y = fY; y <= fY + 5; y++) {
+      for (let x = gx - 5; x <= gx + 5; x++) for (let y = fY; y <= fY + 3; y++) {
         w.set(x, y, -121, y === fY ? C.wallBase : C.whitewall);
       }
-      for (const px of [gx - 5, gx + 5]) for (let z = -120; z <= -116; z++) for (let y = fY; y <= fY + 5; y++) {
+      for (const px of [gx - 5, gx + 5]) for (let z = -120; z <= -116; z++) for (let y = fY; y <= fY + 3; y++) {
         w.set(px, y, z, y === fY ? C.wallBase : C.whitewall);
       }
-      // 前墙 + 板门
-      for (let x = gx - 5; x <= gx + 5; x++) for (let y = fY; y <= fY + 5; y++) {
+      // 前墙 + 板门（H.door：隐藏体素→可开合精细门扇 + 步行碰撞）
+      for (let x = gx - 5; x <= gx + 5; x++) for (let y = fY; y <= fY + 3; y++) {
         if (x >= gx - 2 && x <= gx + 2 && y <= fY + 2) continue;
         w.set(x, y, -115, y === fY ? C.wallBase : C.whitewall);
       }
-      for (let x = gx - 2; x <= gx + 2; x++) for (let y = fY; y <= fY + 2; y++) {
-        w.set(x, y, -115, (x === gx - 2 || x === gx + 2) ? C.woodDark : C.woodRed);
-      }
+      H.door({ x: gx - 2, y: fY, z: -115, axis: 'x', w: 5, h: 3, c: C.woodRed, studs: true, label: '栊翠庵山门' });
       // 门簪、门额
       w.set(gx - 3, fY + 3, -115, C.woodDark); w.set(gx + 3, fY + 3, -115, C.woodDark);
-      H.eaveBand({ x1: gx - 5, z1: -121, x2: gx + 5, z2: -115, y: fY + 6 });
-      H.roof({ x1: gx - 5, z1: -121, x2: gx + 5, z2: -115, y: fY + 7, h: 2, type: 'gable', tile: C.roof, overhang: 2, upturn: 1 });
+      H.eaveBand({ x1: gx - 5, z1: -121, x2: gx + 5, z2: -115, y: fY + 4 });
+      H.roof({ x1: gx - 5, z1: -121, x2: gx + 5, z2: -115, y: fY + 5, h: 2, type: 'gable', tile: C.roof, overhang: 2, upturn: 1 });
       H.plaque({ x: gx, y: fY + 3, z: -114, dir: 'south', text: '苦海慈航', w: 6, h: 2 });
       // 门外石阶（台地→山脚）
       for (let i = 0; i < 6; i++) {
@@ -483,35 +481,45 @@ export function buildNorth(ctx) {
       support(gx + 9, -113, 5, C.stoneLight, C.stone); support(gx + 9, -114, 5, C.stoneLight, C.stone);
     }
 
-    // ── 4.3 大殿三间（歇山，灰瓦朱柱，殿内佛龛）──
+    // ── 4.3 大殿三间（歇山，灰瓦朱柱，殿内佛龛；HD：台基+1、檐柱+1）──
     const main = H.hall({
-      x: 91, z: -134, bays: 3, bayW: 6, depth: 10, y: CY,
-      plinthH: 1, plinthC: C.stone, plinthTop: C.stoneWarm,
-      wallH: 4, columnH: 5, roof: 'xieshan', tile: C.roof, roofH: 4,
+      x: 91, z: -134, bays: 3, bayW: 6, depth: 10, y: CY, name: '栊翠庵大殿',
+      plinthH: 2, plinthC: C.stone, plinthTop: C.stoneWarm,
+      wallH: 5, columnH: 6, roof: 'xieshan', tile: C.roof, roofH: 4,
       columns: C.redPillar, wall: C.whitewall, doorC: C.woodRed,
       stepDir: 'south', interior: false,
     });
-    // 佛龛（须弥座 + 金身 + 背光 + 供桌）
+    // 佛龛（须弥座 + 金身 + 背光；供桌/香炉交给 H.furnish 精细陈设）
     const bz = -138;
-    H.box(87, 12, bz - 1, 95, 13, bz + 1, C.woodDark);
-    H.box(88, 14, bz, 94, 14, bz, C.wood);
-    H.box(90, 15, bz, 92, 18, bz, C.gold);
-    H.box(91, 19, bz, 91, 19, bz, C.goldDark);
-    H.box(89, 16, bz, 89, 18, bz, C.goldDark);
-    H.box(93, 16, bz, 93, 18, bz, C.goldDark);
-    for (const [cx2, cy2] of [[88, 16], [94, 16]]) { w.set(cx2, 15, bz, C.lampWarm); w.set(cx2, 14, bz, C.lampWarm); }
-    H.box(88, 13, -135, 94, 13, -134, C.wood);
-    for (const cx2 of [89, 93]) { w.set(cx2, 14, -134, C.bronze); w.set(cx2, 15, -134, C.bronze); w.set(cx2, 16, -134, C.lampWarm); }
-    w.set(91, 12, -134, C.cushion); w.set(91, 12, -132, C.cushion);
+    H.box(87, 13, bz - 1, 95, 14, bz + 1, C.woodDark);
+    H.box(88, 15, bz, 94, 15, bz, C.wood);
+    H.box(90, 15, bz, 92, 17, bz, C.gold);
+    w.set(91, 18, bz, C.goldDark);
+    H.box(89, 16, bz, 89, 17, bz, C.goldDark);
+    H.box(93, 16, bz, 93, 17, bz, C.goldDark);
+    for (const cx2 of [88, 94]) { w.set(cx2, 16, bz, C.lampWarm); w.set(cx2, 15, bz, C.lampWarm); }
+    w.set(91, 13, -134, C.cushion);
+    // 殿内精细陈设：佛殿以佛龛为背景，撤去本次新增的屏风/挂画/地毯，保留香案香炉、灯笼、瓶花
+    {
+      const DETF = ctx.details && ctx.details.furniture;
+      const n0 = DETF ? DETF.length : 0;
+      H.furnish({ x: 91, z: -134, y: main.floorY, w: 15, d: 7, h: 5, style: 'hall' });
+      if (DETF) {
+        for (let i = DETF.length - 1; i >= n0; i--) {
+          const k = DETF[i].kind;
+          if (k === 'screen' || k === 'painting' || k === 'rug') DETF.splice(i, 1);
+        }
+      }
+    }
     // 殿前石灯、香炉
     for (const px of [84, 98]) {
-      support(px, -124, 10, C.stoneWarm, C.stone);
-      w.set(px, 11, -124, C.stoneLight); w.set(px, 12, -124, C.stoneLight);
-      w.set(px, 13, -124, C.stoneWarm); w.set(px, 13, -124, C.lampWarm);
-      w.set(px, 14, -124, C.stoneLight);
+      support(px, -124, 11, C.stoneWarm, C.stone);
+      w.set(px, 12, -124, C.stoneLight); w.set(px, 13, -124, C.stoneLight);
+      w.set(px, 14, -124, C.stoneWarm); w.set(px, 14, -124, C.lampWarm);
+      w.set(px, 15, -124, C.stoneLight);
     }
-    support(91, -122, 10, C.bronzeDark, C.bronze);
-    w.set(91, 11, -122, C.bronze); w.set(91, 12, -122, C.bronzeDark);
+    support(91, -122, 11, C.bronzeDark, C.bronze);
+    w.set(91, 12, -122, C.bronze); w.set(91, 13, -122, C.bronzeDark);
 
     // ── 4.4 东禅堂三间（院内东侧，面西）──
     {
@@ -519,26 +527,29 @@ export function buildNorth(ctx) {
       // 台基
       H.plinth({ x: tx, z: tz, w: 5, d: 3, y: CY, h: 1, c: C.stone, top: C.stoneWarm, step: 0 });
       const fY = CY + 1;
-      // 角柱
-      for (const px of [tx - 4, tx, tx + 4]) for (const pz of [tz - 3, tz + 3]) H.column(px, pz, fY, 4, C.redPillar);
+      // 角柱（HD 加高）
+      for (const px of [tx - 4, tx, tx + 4]) for (const pz of [tz - 3, tz + 3]) H.column(px, pz, fY, 5, C.redPillar);
       // 东墙（背墙）白墙 + 花窗
-      for (let ppz = tz - 3; ppz <= tz + 3; ppz++) for (let y = fY; y <= fY + 3; y++) w.set(tx + 4, y, ppz, y === fY ? C.wallBase : C.whitewall);
+      for (let ppz = tz - 3; ppz <= tz + 3; ppz++) for (let y = fY; y <= fY + 4; y++) w.set(tx + 4, y, ppz, y === fY ? C.wallBase : C.whitewall);
       H.latticeWindow({ x: tx + 4, y: fY + 1, z: tz - 1, axis: 'z', w: 3, h: 2, cFrame: C.stoneWarm, cLattice: C.windowGreen });
       // 南北墙
-      for (const pz of [tz - 3, tz + 3]) for (let x = tx - 4; x <= tx + 4; x++) for (let y = fY; y <= fY + 3; y++) {
+      for (const pz of [tz - 3, tz + 3]) for (let x = tx - 4; x <= tx + 4; x++) for (let y = fY; y <= fY + 4; y++) {
         w.set(x, y, pz, y === fY ? C.wallBase : C.whitewall);
       }
-      // 西面（面向大殿）：槛窗 + 门
-      for (let ppz = tz - 3; ppz <= tz + 3; ppz++) for (let y = fY; y <= fY + 3; y++) {
+      // 西面（面向大殿）：槛窗 + 门（H.door 可开合）
+      for (let ppz = tz - 3; ppz <= tz + 3; ppz++) for (let y = fY; y <= fY + 4; y++) {
         const inDoor = ppz >= tz - 1 && ppz <= tz + 1 && y <= fY + 2;
-        if (inDoor) { w.set(tx - 4, y, ppz, (ppz === tz - 1 || ppz === tz + 1) ? C.woodDark : C.woodRed); continue; }
-        const win = y >= fY + 1 && y <= fY + 2;
+        if (inDoor) continue;
+        const win = y >= fY + 1 && y <= fY + 3;
         w.set(tx - 4, y, ppz, win ? (((tx + ppz + y) & 1) ? C.windowGreen : C.windowGlow) : (y === fY ? C.wallBase : C.whitewall));
       }
-      H.eaveBand({ x1: tx - 4, z1: tz - 3, x2: tx + 4, z2: tz + 3, y: fY + 3 });
-      H.roof({ x1: tx - 4, z1: tz - 3, x2: tx + 4, z2: tz + 3, y: fY + 4, h: 3, type: 'xieshan', tile: C.roof, overhang: 2, upturn: 1 });
+      H.door({ x: tx - 4, y: fY, z: tz - 1, axis: 'z', w: 3, h: 3, c: C.woodRed, label: '东禅堂' });
+      H.eaveBand({ x1: tx - 4, z1: tz - 3, x2: tx + 4, z2: tz + 3, y: fY + 4 });
+      H.roof({ x1: tx - 4, z1: tz - 3, x2: tx + 4, z2: tz + 3, y: fY + 5, h: 3, type: 'xieshan', tile: C.roof, overhang: 2, upturn: 1 });
       // 禅堂前石阶
       for (let ppz = tz - 1; ppz <= tz + 1; ppz++) support(tx - 5, ppz, CY, C.stoneWarm, C.stone);
+      // 禅堂室内陈设
+      H.furnish({ x: tx, z: tz, y: fY, w: 7, d: 5, h: 4, style: 'hall' });
     }
 
     // ── 4.5 院中石径、香炉 ──
@@ -568,26 +579,25 @@ export function buildNorth(ctx) {
   // ═══════════════════════════════════════════════════════════════════════════
   {
     const GY = 15; // elev14 → 台基 y=15
-    // ── 5.1 敞厅方亭（歇山重檐意，三面开敞，南面可眺全园）──
+    // ── 5.1 敞厅方亭（歇山，三面开敞，南面可眺全园；HD：檐柱+1、举高加大）──
     const pav = H.pavilion({
-      x: 118, z: -96, size: 12, y: GY, plinthH: 1, columnH: 4, roof: 'xieshan',
-      tile: C.roof, roofH: 4, rail: false, step: 3,
+      x: 118, z: -96, size: 12, y: GY, plinthH: 1, columnH: 5, roof: 'xieshan',
+      tile: C.roof, roofH: 7, rail: false, step: 3,
       plaque: '凸碧山莊',
     });
     const fl = pav.floorY; // 16
-    // 三面矮栏（东、西、南），北面留作山石屏障
+    // 三面矮栏（东、西、南，单层约 1m 高，可凭可坐）
     for (let x = 112; x <= 124; x++) {
       if (x >= 116 && x <= 120) continue; // 南面中间留出入口
-      w.set(x, fl, -90, C.stoneWarm); w.set(x, fl + 1, -90, C.marbleShade);
+      w.set(x, fl, -90, C.marbleShade);
     }
     for (const px of [112, 124]) {
-      for (let z = -101; z <= -91; z++) { w.set(px, fl, z, C.stoneWarm); w.set(px, fl + 1, z, C.marbleShade); }
+      for (let z = -101; z <= -91; z++) w.set(px, fl, z, C.marbleShade);
     }
-    // 亭中石桌石凳
-    H.tableSet({ x: 118, z: -96, y: fl, size: 2 });
-    // 亭后山石（压顶为屏，不遮匾）
-    H.rockery({ x1: 112, z1: -105, x2: 124, z2: -102, h: 5, y: 15, seed: 91 });
-    H.rockery({ x1: 108, z1: -100, x2: 110, z2: -93, h: 4, y: 15, seed: 92 });
+    // 亭中石桌石凳交由 H.pavilion 自动精细陈设（方桌+绣墩），此处不再放体素桌
+    // 亭后山石（压顶为屏，随亭加高而上抬）
+    H.rockery({ x1: 112, z1: -105, x2: 124, z2: -102, h: 7, y: 15, seed: 91 });
+    H.rockery({ x1: 108, z1: -100, x2: 110, z2: -93, h: 6, y: 15, seed: 92 });
     H.rock({ x: 127, z: -92, size: 2, h: 6 });
     H.rock({ x: 109, z: -88, size: 2, h: 5 });
     H.rock({ x: 126, z: -102, size: 1, h: 4 });
@@ -621,39 +631,42 @@ export function buildNorth(ctx) {
   {
     // ── 6.1 贴水石台（石柱挑台）──
     waterDeck(88, -81, 99, -74, 4, { edgeC: C.stoneWarm });
-    // 台缘石栏（南、东、西留入口）
-    for (let x = 88; x <= 99; x++) { w.set(x, 5, -74, C.stoneWarm); w.set(x, 6, -74, C.marbleShade); }
+    // 台缘石栏（东、西侧；南侧为敞轩后墙，中间留门）
+    for (const x of [88, 89, 98, 99]) { w.set(x, 5, -74, C.stoneWarm); w.set(x, 6, -74, C.marbleShade); }
     for (let z = -80; z <= -75; z++) { w.set(88, 5, z, C.stoneWarm); w.set(88, 6, z, C.marbleShade); }
     // 南岸登台石阶
     paintPath([[95, -72], [95, -75]], 3, { c: C.path2, c2: C.path });
-    support(93, -74, 5, C.stoneWarm, C.stone); support(97, -74, 5, C.stoneWarm, C.stone);
+    support(92, -74, 5, C.stoneWarm, C.stone); support(97, -74, 5, C.stoneWarm, C.stone);
 
-    // ── 6.2 卷棚敞轩（三间，北面朝水开敞）──
+    // ── 6.2 卷棚敞轩（三间，北面朝水开敞；HD：檐柱+1、屋面举高）──
     const hx = 94, hz = -77;
     // 台座
     for (let x = hx - 4; x <= hx + 4; x++) for (let z = hz - 3; z <= hz + 3; z++) support(x, z, 5, C.stoneWarm, C.stone);
     const fY = 6;
-    // 柱（三间）
-    for (const px of [hx - 4, hx, hx + 4]) for (const pz of [hz - 3, hz + 3]) H.column(px, pz, fY, 4, C.redPillar);
-    // 南面（背水）白墙 + 槛窗
-    for (let x = hx - 4; x <= hx + 4; x++) for (let y = fY; y <= fY + 3; y++) {
-      const win = y >= fY + 1 && y <= fY + 2;
+    // 柱（三间，加高）
+    for (const px of [hx - 4, hx, hx + 4]) for (const pz of [hz - 3, hz + 3]) H.column(px, pz, fY, 5, C.redPillar);
+    // 南面（背水）白墙 + 槛窗 + 后门（H.door 可开合）
+    for (let x = hx - 4; x <= hx + 4; x++) for (let y = fY; y <= fY + 4; y++) {
+      const inDoor = x >= hx - 1 && x <= hx + 1 && y <= fY + 2;
+      if (inDoor) continue;
+      const win = y >= fY + 2 && y <= fY + 3;
       w.set(x, y, hz + 3, win ? (((x + y) & 3) === 0 ? C.windowGreen : C.windowGlow) : (y === fY ? C.wallBase : C.whitewall));
     }
+    H.door({ x: hx - 1, y: fY, z: hz + 3, axis: 'x', w: 3, h: 3, c: C.woodRed, label: '凹晶溪館' });
     // 东西山墙
-    for (const px of [hx - 4, hx + 4]) for (let z = hz - 2; z <= hz + 2; z++) for (let y = fY; y <= fY + 3; y++) {
+    for (const px of [hx - 4, hx + 4]) for (let z = hz - 2; z <= hz + 2; z++) for (let y = fY; y <= fY + 4; y++) {
       w.set(px, y, z, y === fY ? C.wallBase : C.whitewall);
     }
     // 北面开敞：仅额枋 + 矮栏
-    for (let x = hx - 4; x <= hx + 4; x++) w.set(x, fY + 3, hz - 3, C.woodDark);
+    for (let x = hx - 4; x <= hx + 4; x++) w.set(x, fY + 4, hz - 3, C.woodDark);
     for (let x = hx - 3; x <= hx + 3; x++) { w.set(x, fY, hz - 3, C.stoneWarm); w.set(x, fY + 1, hz - 3, C.stoneLight); }
     // 檐下彩画带与卷棚顶
-    H.eaveBand({ x1: hx - 4, z1: hz - 3, x2: hx + 4, z2: hz + 3, y: fY + 3 });
-    H.roof({ x1: hx - 4, z1: hz - 3, x2: hx + 4, z2: hz + 3, y: fY + 4, h: 3, type: 'gableRound', tile: C.roof, overhang: 2, upturn: 1 });
+    H.eaveBand({ x1: hx - 4, z1: hz - 3, x2: hx + 4, z2: hz + 3, y: fY + 4 });
+    H.roof({ x1: hx - 4, z1: hz - 3, x2: hx + 4, z2: hz + 3, y: fY + 5, h: 3, type: 'gableRound', tile: C.roof, overhang: 2, upturn: 1 });
     // 匾「凹晶溪館」（悬于北面额枋下，面向水面；外移一格避免贴片与体素共面）
-    H.plaque({ x: hx, y: fY + 2, z: hz - 4, dir: 'north', text: '凹晶溪館', w: 7, h: 2 });
-    // 轩内石案
-    H.tableSet({ x: hx, z: hz, y: fY, size: 1 });
+    H.plaque({ x: hx, y: fY + 3, z: hz - 4, dir: 'north', text: '凹晶溪館', w: 7, h: 2 });
+    // 轩内精细陈设（临水一面开敞，家具少而雅）
+    H.furnish({ x: hx, z: hz, y: fY, w: 7, d: 5, h: 4.5, style: 'hall' });
     // 临水石阶（下至水面，置舟处）
     for (let i = 0; i < 3; i++) {
       const zz = hz - 4 - i;
@@ -680,34 +693,34 @@ export function buildNorth(ctx) {
   // 7. 沁芳闸（园东北角水口：石闸 + 闸桥 + 跌水 + 桃花林）
   // ═══════════════════════════════════════════════════════════════════════════
   {
-    // ── 7.1 石闸：横跨水口，闸板半启，上架石桥 ──
+    // ── 7.1 石闸：横跨水口，闸板半启，上架石桥（HD：闸墩/闸框加高）──
     const gx = 129, gz = -136; // 闸桥中心（跨水口）
     // 两侧闸墩（砌石塔）
     for (const px of [121, 137]) {
       for (let x = px - 1; x <= px + 1; x++) {
-        for (let y = 7; y <= 12; y++) w.set(x, y, gz, y === 12 ? C.stoneLight : C.stone);
+        for (let y = 7; y <= 15; y++) w.set(x, y, gz, y === 15 ? C.stoneLight : C.stone);
       }
-      w.set(px, 13, gz, C.stoneWarm);
+      w.set(px, 16, gz, C.stoneWarm);
     }
     // 闸门石框（下游侧 z=-139）
     for (const px of [128, 138]) {
-      support(px, -139, 12, C.stone, C.stoneDark);
-      w.set(px, 12, -139, C.stoneLight);
+      support(px, -139, 15, C.stone, C.stoneDark);
+      w.set(px, 15, -139, C.stoneLight);
     }
-    for (let x = 128; x <= 138; x++) { w.set(x, 12, -139, C.stoneLight); w.set(x, 13, -139, C.stoneWarm); }
+    for (let x = 128; x <= 138; x++) { w.set(x, 14, -139, C.stoneLight); w.set(x, 15, -139, C.stoneWarm); }
     // 木闸板（半启，悬于水口）
-    for (let x = 130; x <= 136; x++) for (let y = 6; y <= 9; y++) {
+    for (let x = 130; x <= 136; x++) for (let y = 6; y <= 12; y++) {
       w.setIfEmpty(x, y, -138, ((x + y) & 1) ? C.woodDark : C.wood);
     }
     // 绞关石
-    for (const px of [132, 134]) { w.set(px, 13, -139, C.bronzeDark); w.set(px, 14, -139, C.bronze); }
+    for (const px of [132, 134]) { w.set(px, 16, -139, C.bronzeDark); w.set(px, 17, -139, C.bronze); }
     // 闸桥（石桥，白玉栏）
     H.bridge({ x: gx, z: gz, len: 17, wid: 7, dir: 'x', type: 'stone1', y: 6 });
     // 桥面与闸墩衔接石阶
     for (let z = gz - 3; z <= gz + 3; z++) support(121, z, 6, C.stoneWarm, C.stone);
     for (let z = gz - 3; z <= gz + 3; z++) support(137, z, 6, C.stoneWarm, C.stone);
     // 匾「沁芳閘」（悬于闸门石框上，面向园内；外移一格避免贴片共面）
-    H.plaque({ x: 133, y: 10, z: -138, dir: 'south', text: '沁芳閘', w: 6, h: 2 });
+    H.plaque({ x: 133, y: 12, z: -137, dir: 'south', text: '沁芳閘', w: 6, h: 2 });
 
     // ── 7.2 跌水：水口下层白色水体素 / 晶帘意象 ──
     for (let i = 0; i < 130; i++) {
@@ -719,9 +732,9 @@ export function buildNorth(ctx) {
     // 跌水口石槛、两侧石壁
     for (let x = 131; x <= 137; x++) { w.set(x, 2, -140, C.stoneDark); w.set(x, 2, -141, C.stone); }
     for (let z = -141; z >= -145; z--) { w.setIfEmpty(130, 3, z, C.stone); w.setIfEmpty(138, 3, z, C.stone); }
-    // 石梁桥面下白色水帘（自闸板下泻）
+    // 石梁桥面下白色水帘（自闸板下泻，随闸门加高而拉长）
     for (let x = 131; x <= 137; x += 2) {
-      for (let y = 3; y <= 5; y++) w.setIfEmpty(x, y, -139, y === 3 ? C.whitewall : C.plumWhite);
+      for (let y = 3; y <= 7; y++) w.setIfEmpty(x, y, -139, y === 3 ? C.whitewall : C.plumWhite);
     }
 
     // ── 7.3 两岸石径（接旧路）──

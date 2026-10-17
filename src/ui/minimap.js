@@ -192,6 +192,27 @@ export function initMinimap(ctx) {
   }
 
   function readCamera() {
+    // 步行模式：玩家位置/朝向来自 getView()（契约：步行下返回 x,z,heading）或 walk 事件
+    const mode = ctx.state && ctx.state.mode;
+    if (mode === 'walk') {
+      const getViewWalk = ctx.app && typeof ctx.app.getView === 'function' ? ctx.app.getView : null;
+      if (getViewWalk) {
+        const view = safe(() => getViewWalk.call(ctx.app));
+        if (view && Number.isFinite(view.x) && Number.isFinite(view.z)) {
+          let angle;
+          if (Number.isFinite(view.heading)) angle = view.heading + headingOffset;
+          else if (ctx.state.walk && Number.isFinite(ctx.state.walk.yaw)) angle = ctx.state.walk.yaw + headingOffset;
+          if (angle !== undefined) return { x: view.x, z: view.z, angle };
+        }
+      }
+      const ws = ctx.state.walk;
+      if (ws && Array.isArray(ws.pos) && Number.isFinite(ws.pos[0]) && Number.isFinite(ws.pos[2])) {
+        const angle = Number.isFinite(ws.yaw) ? ws.yaw + headingOffset : -Math.PI / 2;
+        return { x: ws.pos[0], z: ws.pos[2], angle };
+      }
+      return null;
+    }
+
     const G = window.GVG || {};
     const cam = G.view && G.view.camera;
     const controls = G.controls;

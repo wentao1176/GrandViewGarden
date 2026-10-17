@@ -14,6 +14,8 @@ export function createHelpers(ctx) {
   const R = ctx.R || (() => 0.5);
   const decals = ctx.decals || (ctx.decals = []);
   const pick = (arr) => arr[Math.floor(R() * arr.length) % arr.length];
+  const DET = ctx.details || (ctx.details = { roofs: [], columns: [], lattices: [], railings: [], doors: [], furniture: [], lanterns: [], banners: [], misc: [] });
+  for (const k of ['roofs', 'columns', 'lattices', 'railings', 'doors', 'furniture', 'lanterns', 'banners', 'misc']) if (!DET[k]) DET[k] = [];
 
   // ── 基础体素操作 ────────────────────────────────────────────────────────────
   const box = (x1, y1, z1, x2, y2, z2, c) => w.fill(x1, y1, z1, x2, y2, z2, c);
@@ -267,6 +269,13 @@ export function createHelpers(ctx) {
       }
       topY += 3;
     }
+    if (DET.roofs) DET.roofs.push({
+      x1, z1, x2, z2, eaveY, ridgeY: topY, type,
+      tile, edge: edgeC, ridge: ridgeC, upturn: up,
+      style: isGlaze ? 'imperial' : 'residential',
+      ridgeAxis: 'x',
+      ridgeRun: { x1: Math.min(o.x1, o.x2), x2: Math.max(o.x1, o.x2), z: Math.round((z1 + z2) / 2) },
+    });
     return topY;
   }
 
@@ -331,12 +340,19 @@ export function createHelpers(ctx) {
         box(gx - gw, y, z2 - 1, gx - gw, y + h - 1, z2, C.stone);
         box(gx + gw, y, z2 - 1, gx + gw, y + h - 1, z2, C.stone);
         box(gx - gw, y + h, z2 - 1, gx + gw, y + h, z2, C.roof);
+        const cells = [];
         for (let x = gx - gw + 1; x <= gx + gw - 1; x++) {
-          for (let yy = y; yy < y + h - 1; yy++) set(x, yy, z2, C.woodRed);
+          for (let yy = y; yy < y + h - 1; yy++) { set(x, yy, z2, C.woodRed); cells.push([x, yy, z2]); }
         }
         for (let x = gx - gw + 2; x <= gx + gw - 2; x += 2) {
           for (let yy = y + 1; yy < y + h - 2; yy += 2) set(x, yy, z2, C.gold);
         }
+        for (const [cx, cy, cz] of cells) w.set(cx, cy, cz, 0);
+        DET.doors.push({
+          x: gx - gw + 1, y, z: z2, axis: 'x', w: 2 * gw - 1, h: h - 1,
+          leafColor: C.woodRed, hinge: 'left', openTowards: 1, label: '院门',
+          cells, open: 1, target: 1,
+        });
       }
     }
     if (o.windows !== false) {
@@ -383,18 +399,29 @@ export function createHelpers(ctx) {
         else set(o.x, o.y + j, o.z + i, c);
       }
     }
+    if (DET.lattices) DET.lattices.push({
+      x: o.x, y: o.y, z: o.z, axis, w: ww, h: hh,
+      frame: cF, lattice: cL, style: o.style || 'step',
+    });
+    for (let i = 0; i < ww; i++) for (let j = 0; j < hh; j++) {
+      if (axis === 'x') w.hide(o.x + i, o.y + j, o.z);
+      else w.hide(o.x, o.y + j, o.z + i);
+    }
   }
 
   function door(o) {
     const axis = o.axis || 'x';
     const ww = o.w || 4, hh = o.h || 3;
     const c = o.c ?? C.woodRed;
+    const cells = [];
     for (let i = 0; i < ww; i++) {
       for (let j = 0; j < hh; j++) {
         const frame = i === 0 || i === ww - 1;
         const c2 = frame ? C.woodDark : c;
-        if (axis === 'x') set(o.x + i, o.y + j, o.z, c2);
-        else set(o.x, o.y + j, o.z + i, c2);
+        const px = axis === 'x' ? o.x + i : o.x;
+        const pz = axis === 'x' ? o.z : o.z + i;
+        set(px, o.y + j, pz, c2);
+        cells.push([px, o.y + j, pz]);
       }
     }
     if (o.studs) {
@@ -403,6 +430,13 @@ export function createHelpers(ctx) {
         else set(o.x, o.y + j, o.z + i, C.gold);
       }
     }
+    // 门扇交给精细网格（可开合）；体素清空（仅保留门格记录供步行碰撞/开合状态）
+    for (const [x, y, z] of cells) w.set(x, y, z, 0);
+    DET.doors.push({
+      x: o.x, y: o.y, z: o.z, axis, w: ww, h: hh, leafColor: c,
+      hinge: o.hinge || 'left', openTowards: o.openTowards ?? 1,
+      label: o.label || '', cells, open: 1, target: 1,
+    });
   }
 
   // ── 栏杆 ────────────────────────────────────────────────────────────────────
@@ -422,6 +456,14 @@ export function createHelpers(ctx) {
         set(x, o.y + h, z, c);
         if (style !== 'stone') set(x, o.y + 1, z, c);
       }
+    }
+    if (DET.railings) DET.railings.push({
+      x1: o.x1, z1: o.z1, x2: o.x2, z2: o.z2, y: o.y,
+      style, color: c, h: o.h ?? 2,
+    });
+    // 体素栏杆由精细栏杆网格替换（不进入体素网格；仍保留碰撞意义）
+    for (const [x, z] of pts) {
+      for (let k = 0; k <= h + 1; k++) w.hide(x, o.y + k, z);
     }
   }
 
@@ -447,7 +489,14 @@ export function createHelpers(ctx) {
       pts.push([x - half, z - half], [x + half, z - half], [x - half, z + half], [x + half, z + half]);
       if (size >= 10) pts.push([x, z - half], [x, z + half], [x - half, z], [x + half, z]);
     }
-    for (const [px, pz] of pts) column(px, pz, floorY, columnH + 1, postC);
+    for (const [px, pz] of pts) {
+      column(px, pz, floorY, columnH + 1, postC);
+      for (let i = 0; i < columnH + 1; i++) w.hide(px, floorY + i, pz);
+    }
+    if (DET.columns) for (const [px, pz] of pts) DET.columns.push({
+      x: px, z: pz, y: floorY, h: columnH + 1, r: 0.22, color: postC,
+      base: C.stoneWarm, cap: C.gold, style: 'wood',
+    });
     if (o.rail !== false) {
       const rInset = 1;
       railing({ x1: x - half + rInset, z1: z - half, x2: x + half - rInset, z2: z - half, y: floorY, style: o.railStyle || 'wood', c: o.railC ?? C.redRail });
@@ -460,6 +509,15 @@ export function createHelpers(ctx) {
     const tile = o.tile || C.roof;
     const topY = roof({ x1: x - half - 1, z1: z - half - 1, x2: x + half + 1, z2: z + half + 1, y: roofY, h: o.roofH ?? 3, type: o.roof || 'pyramid', tile, overhang: o.overhang ?? 2, upturn: o.upturn ?? 2 });
     if (o.plaque) plaque({ x, y: floorY + columnH - 1, z: z + half + 1, dir: 'south', text: o.plaque, w: Math.min(7, size - 1), h: 2 });
+    if (DET.furniture) {
+      DET.furniture.push(
+        { kind: 'squareTable', x: x + 0.5, y: floorY, z: z + 0.5, rotY: 0, size: Math.min(3.2, half * 0.8) },
+        { kind: 'stool', x: x - 1.6, y: floorY, z: z + 0.5, rotY: 0 },
+        { kind: 'stool', x: x + 2.6, y: floorY, z: z + 0.5, rotY: 0 },
+        { kind: 'stool', x: x + 0.5, y: floorY, z: z - 1.1, rotY: 0 },
+        { kind: 'stool', x: x + 0.5, y: floorY, z: z + 2.1, rotY: 0 },
+      );
+    }
     return { topY, floorY };
   }
 
@@ -499,6 +557,14 @@ export function createHelpers(ctx) {
       const px = x - halfW + Math.round(b * bayW);
       column(px, colFrontZ, floorY, columnH, colC);
       column(px, backZ, floorY, columnH, colC);
+      for (const pz of [colFrontZ, backZ]) for (let i = 0; i < columnH; i++) w.hide(px, floorY + i, pz);
+    }
+    if (DET.columns) for (let b = 0; b <= bays; b++) {
+      const px = x - halfW + Math.round(b * bayW);
+      for (const pz of [colFrontZ, backZ]) DET.columns.push({
+        x: px, z: pz, y: floorY, h: columnH, r: 0.22, color: colC,
+        base: C.stoneWarm, cap: C.gold, style: 'wood',
+      });
     }
     for (let zz = backZ; zz <= frontZ; zz++) {
       for (let yy = floorY; yy < floorY + wallH; yy++) {
@@ -526,11 +592,33 @@ export function createHelpers(ctx) {
       }
     }
     const doorW = Math.max(3, bayW - 1);
-    door({ x: x - Math.floor(doorW / 2), y: floorY, z: frontZ, axis: 'x', w: doorW, h: Math.max(2, wallH - 1), c: o.doorC ?? C.woodRed, studs: bays >= 5 });
+    door({ x: x - Math.floor(doorW / 2), y: floorY, z: frontZ, axis: 'x', w: doorW, h: Math.max(2, wallH - 1), c: o.doorC ?? C.woodRed, studs: bays >= 5, label: o.plaque || o.name || '' });
     eaveBand({ x1: x - halfW, z1: colFrontZ, x2: x + halfW, z2: backZ, y: floorY + wallH - 1 });
     if (o.interior !== false) {
-      box(x - 3, floorY, backZ + 1, x + 3, floorY + 3, backZ + 1, C.woodDark);
-      box(x - 1, floorY, backZ + 2, x + 1, floorY + 1, backZ + 2, C.wood);
+      const roomW = halfW * 2 - 3;
+      const roomD = Math.max(3, (frontZ - backZ) - 2);
+      const cz = z;
+      const f = DET.furniture;
+      if (f) {
+        f.push({ kind: 'screen', x: x + 0.5, y: floorY, z: backZ + 1.15, rotY: 0, w: Math.min(roomW, 7.5), h: Math.min(4.2, wallH - 0.6) });
+        f.push({ kind: 'painting', x: x + 0.5, y: floorY + 2.35, z: backZ + 1.08, rotY: 0, w: 1.5, h: 2.2 });
+        f.push({ kind: 'altar', x: x + 0.5, y: floorY, z: backZ + 2.4, rotY: 0, w: Math.min(3.6, roomW * 0.5) });
+        f.push({ kind: 'vase', x: x - Math.min(2.2, roomW * 0.32), y: floorY, z: backZ + 2.3, rotY: 0 });
+        f.push({ kind: 'incense', x: x + Math.min(2.2, roomW * 0.32), y: floorY, z: backZ + 2.3, rotY: 0 });
+        f.push({ kind: 'chair', x: x - 1.4, y: floorY, z: backZ + 3.6, rotY: Math.PI });
+        f.push({ kind: 'chair', x: x + 1.4, y: floorY, z: backZ + 3.6, rotY: Math.PI });
+        f.push({ kind: 'table', x: x + 0.5, y: floorY, z: Math.min(cz, backZ + 4.8), rotY: 0, w: Math.min(2.4, roomW * 0.4) });
+        f.push({ kind: 'chair', x: x - 1.9, y: floorY, z: Math.min(cz + 0.8, frontZ - 2), rotY: Math.PI / 2 });
+        f.push({ kind: 'chair', x: x + 2.9, y: floorY, z: Math.min(cz + 0.8, frontZ - 2), rotY: -Math.PI / 2 });
+        f.push({ kind: 'rug', x: x + 0.5, y: floorY, z: cz, rotY: 0, w: Math.max(2.5, roomW - 2), d: Math.max(2.5, roomD - 1) });
+        for (const lx of [x - halfW + 1.2, x + halfW - 0.2]) {
+          f.push({ kind: 'lantern', x: lx, y: floorY + Math.min(3.1, columnH - 0.6), z: frontZ - 1.2, rotY: 0 });
+        }
+        for (const sx of [x - halfW + 1.6, x + halfW - 0.6]) {
+          f.push({ kind: 'pottedPlant', x: sx, y: floorY, z: backZ + 1.5, rotY: 0 });
+        }
+      }
+      // 室内陈设由精细网格承担（屏风/家具/灯烛）；不再放体素底衬，避免挡住画心
     }
     const roofY = floorY + columnH;
     const topY = roof({
@@ -846,6 +934,45 @@ export function createHelpers(ctx) {
     }
   }
 
+  // ── 室内陈设（供 custom 厅堂/配房调用；一次布置一室）─────────────────────
+  function furnish(o) {
+    const f = DET.furniture;
+    if (!f) return;
+    const x = o.x, z = o.z, y = o.y;
+    const ww = o.w || 8, dd = o.d || 6;
+    const style = o.style || 'hall';
+    const hh = o.h || 4.5;
+    const backZ = z - dd / 2 + 1.0;
+    const frontZ = z + dd / 2 - 1.2;
+    const halfW = ww / 2 - 1.0;
+    f.push({ kind: 'screen', x: x + 0.5, y, z: backZ, rotY: 0, w: Math.min(ww - 2, 7.5), h: Math.min(4.2, hh - 0.4) });
+    f.push({ kind: 'painting', x: x + 0.5, y: y + 2.35, z: backZ - 0.08, rotY: 0, w: 1.5, h: 2.2 });
+    f.push({ kind: 'altar', x: x + 0.5, y, z: backZ + 1.2, rotY: 0, w: Math.min(3.6, ww * 0.5) });
+    f.push({ kind: 'vase', x: x - Math.min(2.2, halfW * 0.7), y, z: backZ + 1.1, rotY: 0 });
+    f.push({ kind: 'incense', x: x + Math.min(2.2, halfW * 0.7), y, z: backZ + 1.1, rotY: 0 });
+    f.push({ kind: 'chair', x: x - 1.4, y, z: backZ + 2.4, rotY: Math.PI });
+    f.push({ kind: 'chair', x: x + 1.4, y, z: backZ + 2.4, rotY: Math.PI });
+    f.push({ kind: 'rug', x: x + 0.5, y, z: z + 0.4, rotY: 0, w: Math.max(2.5, ww - 2.5), d: Math.max(2.5, dd - 2) });
+    for (const lx of [x - halfW + 0.6, x + halfW + 0.4]) f.push({ kind: 'lantern', x: lx, y: y + Math.min(3.1, hh - 0.8), z: frontZ, rotY: 0 });
+    if (style === 'study') {
+      f.push({ kind: 'desk', x: x + 0.5, y, z: z + 1.8, rotY: 0, w: 2.2 });
+      f.push({ kind: 'chair', x: x + 0.5, y, z: z + 0.9, rotY: Math.PI });
+      f.push({ kind: 'bookshelf', x: x - halfW + 0.9, y, z: backZ + 0.8, rotY: Math.PI / 2 });
+      f.push({ kind: 'qin', x: x + Math.min(1.8, halfW - 1), y, z: z + 2.6, rotY: 0 });
+    } else if (style === 'bedroom') {
+      f.push({ kind: 'bed', x: x + 0.5, y, z: backZ + 2.0, rotY: 0, w: 2.2, d: 1.9 });
+      f.push({ kind: 'curtain', x: x + 0.5, y: y + 1.6, z: backZ + 2.0, rotY: 0, w: 2.6, h: 1.8 });
+      f.push({ kind: 'table', x: x + 2.6, y, z: z + 1.0, rotY: 0, w: 1.2 });
+    } else if (style === 'dining') {
+      f.push({ kind: 'table', x: x + 0.5, y, z: z + 0.6, rotY: 0, w: 2.2, d: 1.2 });
+      f.push({ kind: 'chair', x: x - 1.4, y, z: z + 0.6, rotY: Math.PI / 2 });
+      f.push({ kind: 'chair', x: x + 2.0, y, z: z + 0.6, rotY: -Math.PI / 2 });
+      f.push({ kind: 'chair', x: x + 0.5, y, z: z - 0.8, rotY: 0 });
+      f.push({ kind: 'teaset', x: x + 0.5, y: y + 0.72, z: z + 0.6, rotY: 0 });
+    }
+    for (const sx of [x - halfW + 0.7, x + halfW + 0.5]) f.push({ kind: 'pottedPlant', x: sx, y, z: z - dd / 2 + 1.8, rotY: 0 });
+  }
+
   function parapet(o) {
     const { x1, z1, x2, z2, y } = o;
     rectRing(x1, z1, x2, z2, y, C.whitewall);
@@ -856,6 +983,6 @@ export function createHelpers(ctx) {
   return {
     box, set, setIfEmpty, line, rectRing, speckle, plinth, roof, wall, wallRect, moonGate,
     latticeWindow, door, railing, column, pavilion, eaveBand, hall, corridor, bridge, archway,
-    fence, plaque, couplet, banner, lantern, tableSet, pot, rock, rockery, parapet, stoneLampStand,
+    fence, plaque, couplet, banner, lantern, tableSet, pot, rock, rockery, parapet, stoneLampStand, furnish,
   };
 }

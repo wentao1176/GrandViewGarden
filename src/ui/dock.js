@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// 底部控制条：时段（晨/晝/暮/夜）、自动漫游、地名标签、全屏、说明。
+// 底部控制条：时段（晨/晝/暮/夜）、自动漫游、地名标签、步行/游览、全屏、说明。
 // 状态样式统一用 .on + aria-pressed；实际能力全部委托给 ctx（ui.js）。
 // ─────────────────────────────────────────────────────────────────────────────
 import { h } from './util.js';
@@ -59,6 +59,25 @@ export function initDock(ctx) {
     h('span', { class: 'lbl', text: '標籤' }),
   );
 
+  // 步行 / 游览切换
+  const modeIcon = h('span', { class: 'dock-ico' }, icon('walk'));
+  const modeLabel = h('span', { class: 'lbl', text: '步行' });
+  const modeBtn = h(
+    'button',
+    {
+      class: 'dock-btn mode-btn',
+      attrs: {
+        type: 'button',
+        'aria-label': '進入步行模式（快捷鍵 V）',
+        'aria-pressed': 'false',
+        title: '步行模式（V）',
+      },
+      on: { click: () => ctx.toggleWalkMode() },
+    },
+    modeIcon,
+    modeLabel,
+  );
+
   const fullscreenBtn = h(
     'button',
     {
@@ -88,6 +107,7 @@ export function initDock(ctx) {
     h('span', { class: 'dock-sep', attrs: { 'aria-hidden': 'true' } }),
     tourBtn,
     labelsBtn,
+    modeBtn,
     h('span', { class: 'dock-sep', attrs: { 'aria-hidden': 'true' } }),
     fullscreenBtn,
     helpBtn,
@@ -120,6 +140,25 @@ export function initDock(ctx) {
     }
   }
 
+  function updateMode(mode) {
+    const walk = mode === 'walk';
+    modeBtn.classList.toggle('on', walk);
+    modeBtn.setAttribute('aria-pressed', walk ? 'true' : 'false');
+    modeIcon.replaceChildren(icon(walk ? 'orbit' : 'walk'));
+    modeLabel.textContent = walk ? '遊覽' : '步行';
+    modeBtn.setAttribute('aria-label', walk ? '返回遊覽模式（快捷鍵 V 或 Esc）' : '進入步行模式（快捷鍵 V）');
+    modeBtn.title = walk ? '返回遊覽（V / Esc）' : '步行模式（V）';
+    // 步行模式下自动漫游不可用
+    tourBtn.disabled = walk;
+    tourBtn.classList.toggle('is-disabled', walk);
+    tourBtn.setAttribute('aria-disabled', walk ? 'true' : 'false');
+    tourBtn.title = walk ? '步行模式下不可自動漫遊' : '自動漫遊（T）';
+    if (walk && tourBtn.classList.contains('on')) {
+      tourBtn.classList.remove('on');
+      tourBtn.setAttribute('aria-pressed', 'false');
+    }
+  }
+
   function updateFullscreen() {
     const active = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
     fullscreenBtn.classList.toggle('on', active);
@@ -149,5 +188,5 @@ export function initDock(ctx) {
   document.addEventListener('webkitfullscreenchange', updateFullscreen);
   updateFullscreen();
 
-  return { el: dock, updateTod, updateTour, updateLabels, updateFullscreen, toggleFullscreen };
+  return { el: dock, updateTod, updateTour, updateLabels, updateMode, updateFullscreen, toggleFullscreen };
 }

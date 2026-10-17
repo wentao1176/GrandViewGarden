@@ -2602,6 +2602,547 @@ kbd {
   }
 }
 
+/* ═════════════════════════ 步行模式（第一人称） ═════════════════════════ */
+.walk-hud {
+  position: absolute;
+  inset: 0;
+  z-index: 16;
+  display: none;
+  pointer-events: none;
+}
+
+body.walk-mode .walk-hud {
+  display: block;
+}
+
+/* 准星 */
+.walk-crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.walk-crosshair i {
+  position: absolute;
+  background: rgba(255, 248, 226, 0.95);
+  box-shadow: 0 0 0 1px rgba(10, 14, 11, 0.6), 0 0 6px rgba(0, 0, 0, 0.8);
+  border-radius: 1px;
+}
+
+.walk-crosshair .wx {
+  left: 50%;
+  top: 0;
+  width: 1px;
+  height: 8px;
+  transform: translateX(-50%);
+  box-shadow: 0 0 0 1px rgba(10, 14, 11, 0.55), 0 0 7px rgba(0, 0, 0, 0.85);
+}
+
+.walk-crosshair .wy {
+  left: 50%;
+  bottom: 0;
+  width: 1px;
+  height: 8px;
+  transform: translateX(-50%);
+  box-shadow: 0 0 0 1px rgba(10, 14, 11, 0.55), 0 0 7px rgba(0, 0, 0, 0.85);
+}
+
+.walk-crosshair .wd {
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(255, 248, 226, 0.98);
+  box-shadow: 0 0 0 1px rgba(10, 14, 11, 0.65), 0 0 9px rgba(0, 0, 0, 0.8), 0 0 10px rgba(240, 217, 138, 0.5);
+}
+
+/* 左右短臂，组成完整十字准星 */
+.walk-crosshair::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9px;
+  height: 1px;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 248, 226, 0.95);
+  box-shadow: 0 0 0 1px rgba(10, 14, 11, 0.55), 0 0 7px rgba(0, 0, 0, 0.85);
+  border-radius: 1px;
+}
+
+/* 顶部状态条（当前景点 / 动作提示） */
+.walk-status {
+  position: absolute;
+  top: calc(74px + var(--safe-t));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(72vw, 460px);
+  padding: 7px 14px;
+  border: 1px solid var(--gold-line);
+  border-radius: 999px;
+  background: rgba(11, 16, 13, 0.72);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.ws-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.ws-title {
+  max-width: 44vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--serif);
+  font-size: 12.5px;
+  letter-spacing: 0.14em;
+  color: #f5e9cb;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
+}
+
+.ws-sub {
+  max-width: 46vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+}
+
+.ws-sub[hidden] {
+  display: none;
+}
+
+.walk-info-btn {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--gold-dim);
+  border-radius: 50%;
+  background: rgba(216, 182, 75, 0.08);
+  color: var(--gold-soft);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.walk-info-btn[hidden] {
+  display: none;
+}
+
+.walk-info-btn:hover {
+  color: var(--gold-bright);
+  border-color: var(--gold-soft);
+  background: rgba(216, 182, 75, 0.16);
+}
+
+.walk-info-btn .ico {
+  width: 15px;
+  height: 15px;
+}
+
+/* PC 操作提示 */
+.walk-pc-hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(78px + var(--safe-b));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(11, 16, 13, 0.56);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-family: var(--serif);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(239, 230, 210, 0.56);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.walk-pc-hint kbd {
+  min-width: 20px;
+  padding: 0 5px;
+  border-bottom-width: 1px;
+  font-size: 9px;
+}
+
+body.is-touch .walk-pc-hint {
+  display: none;
+}
+
+/* 交互提示（E / 点击） */
+.interact-prompt {
+  position: absolute;
+  left: 50%;
+  bottom: calc(126px + var(--safe-b));
+  transform: translate(-50%, 8px);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  max-width: min(76vw, 420px);
+  padding: 8px 16px;
+  border: 1px solid rgba(216, 182, 75, 0.5);
+  border-radius: 999px;
+  background: rgba(13, 18, 14, 0.86);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(240, 217, 138, 0.14);
+  color: #f6ead0;
+  font-family: var(--serif);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.24s ease, transform 0.24s var(--ease), visibility 0.24s;
+}
+
+.interact-prompt.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+}
+
+.interact-prompt .wi-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.interact-prompt .wi-key {
+  border-color: rgba(216, 182, 75, 0.55);
+  background: rgba(216, 182, 75, 0.16);
+  color: #ffeab8;
+}
+
+.interact-prompt .wi-icon {
+  display: inline-flex;
+  color: var(--gold-soft);
+}
+
+.interact-prompt .wi-icon .ico {
+  width: 15px;
+  height: 15px;
+}
+
+/* 移动端虚拟摇杆 */
+.joystick {
+  position: absolute;
+  left: calc(18px + var(--safe-l));
+  bottom: calc(82px + var(--safe-b));
+  width: 124px;
+  height: 124px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(216, 182, 75, 0.34);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, rgba(34, 44, 35, 0.58), rgba(10, 15, 11, 0.66));
+  backdrop-filter: blur(10px) saturate(1.1);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(240, 217, 138, 0.12);
+  touch-action: none;
+  pointer-events: auto;
+}
+
+body.walk-mode.is-touch .joystick {
+  display: flex;
+}
+
+.joystick.is-active {
+  border-color: rgba(216, 182, 75, 0.6);
+  background: radial-gradient(circle at 50% 40%, rgba(64, 60, 36, 0.6), rgba(10, 15, 11, 0.7));
+}
+
+.joystick-ring {
+  position: absolute;
+  inset: 14px;
+  border: 1px dashed rgba(216, 182, 75, 0.2);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.joystick-knob {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(216, 182, 75, 0.55);
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 30%, rgba(240, 217, 138, 0.24), rgba(20, 26, 21, 0.92));
+  color: #f3e3b3;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.46);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.joystick-knob .ico {
+  width: 22px;
+  height: 22px;
+}
+
+.joystick-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -19px;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 9px;
+  letter-spacing: 0.26em;
+  color: rgba(239, 230, 210, 0.42);
+  pointer-events: none;
+}
+
+/* 移动端右侧动作按钮 */
+.walk-actions {
+  position: absolute;
+  right: calc(16px + var(--safe-r));
+  bottom: calc(82px + var(--safe-b));
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+body.walk-mode.is-touch .walk-actions {
+  display: flex;
+}
+
+.walk-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 82px;
+  min-height: 44px;
+  padding: 8px 13px;
+  border: 1px solid rgba(216, 182, 75, 0.32);
+  border-radius: 999px;
+  background: rgba(12, 17, 14, 0.74);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(240, 231, 208, 0.86);
+  font-family: var(--serif);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease, transform 0.12s ease;
+}
+
+.walk-action .ico {
+  width: 15px;
+  height: 15px;
+}
+
+.walk-action:hover {
+  border-color: rgba(216, 182, 75, 0.6);
+  color: #fdf3d9;
+}
+
+.walk-action.on {
+  border-color: var(--gold);
+  background: rgba(74, 62, 30, 0.84);
+  color: #ffeab8;
+  box-shadow: inset 0 0 0 1px rgba(216, 182, 75, 0.28), 0 8px 22px rgba(0, 0, 0, 0.34);
+}
+
+.walk-action.is-pressed {
+  transform: scale(0.94);
+}
+
+.walk-exit {
+  border-color: rgba(196, 74, 60, 0.42);
+}
+
+body.card-open .joystick,
+body.card-open .walk-actions,
+body.card-open .interact-prompt {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 底部 Dock：步行中禁用漫游 */
+.dock-btn[disabled],
+.dock-btn.is-disabled {
+  opacity: 0.36;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.dock-btn[disabled]:hover,
+.dock-btn.is-disabled:hover {
+  background: transparent;
+  color: rgba(239, 230, 210, 0.74);
+}
+
+/* 移动端：步行时小地图移到右上，避开摇杆/按钮 */
+@media (max-width: 820px) {
+  body.walk-mode .minimap-wrap {
+    left: auto;
+    right: calc(10px + var(--safe-r));
+    top: calc(112px + var(--safe-t));
+    bottom: auto;
+    width: 116px;
+  }
+
+  body.walk-mode .mm-hint {
+    display: none;
+  }
+
+  body.walk-mode .walk-status {
+    top: calc(60px + var(--safe-t));
+    max-width: 74vw;
+    padding: 5px 10px;
+  }
+
+  body.walk-mode .ws-title {
+    max-width: 52vw;
+    font-size: 11.5px;
+  }
+
+  body.walk-mode .ws-sub {
+    max-width: 54vw;
+    font-size: 9px;
+  }
+
+  body.walk-mode .interact-prompt {
+    bottom: calc(208px + var(--safe-b));
+    max-width: calc(100vw - 170px);
+    padding: 7px 12px;
+    font-size: 12px;
+    gap: 8px;
+  }
+
+  .joystick {
+    left: calc(14px + var(--safe-l));
+    bottom: calc(76px + var(--safe-b));
+    width: 118px;
+    height: 118px;
+  }
+
+  .joystick-knob {
+    width: 50px;
+    height: 50px;
+  }
+
+  .walk-actions {
+    right: calc(12px + var(--safe-r));
+    bottom: calc(76px + var(--safe-b));
+    gap: 7px;
+  }
+
+  .walk-action {
+    min-width: 74px;
+    min-height: 44px;
+    padding: 7px 11px;
+    font-size: 11px;
+  }
+}
+
+/* 窄屏 Dock：图标化以容纳新增的步行按钮 */
+@media (max-width: 430px) {
+  .dock .dock-btn .lbl {
+    display: none;
+  }
+
+  .dock .dock-btn {
+    padding: 6px 7px;
+    gap: 0;
+  }
+}
+
+/* 横屏短屏：步行 HUD 收紧 */
+@media (max-height: 560px) and (orientation: landscape) {
+  body.walk-mode .minimap-wrap {
+    left: auto;
+    right: calc(12px + var(--safe-r));
+    top: calc(56px + var(--safe-t));
+    bottom: auto;
+    width: 108px;
+  }
+
+  body.walk-mode .walk-status {
+    top: calc(66px + var(--safe-t));
+    max-width: 48vw;
+    padding: 4px 10px;
+  }
+
+  body.walk-mode .ws-title {
+    max-width: 40vw;
+    font-size: 11px;
+  }
+
+  body.walk-mode .ws-sub {
+    display: none;
+  }
+
+  .interact-prompt {
+    bottom: calc(140px + var(--safe-b));
+  }
+
+  .joystick {
+    width: 104px;
+    height: 104px;
+    bottom: calc(58px + var(--safe-b));
+  }
+
+  .joystick-knob {
+    width: 44px;
+    height: 44px;
+  }
+
+  .walk-actions {
+    bottom: calc(58px + var(--safe-b));
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  .walk-action {
+    min-width: 60px;
+    min-height: 40px;
+    padding: 6px 9px;
+    font-size: 10.5px;
+  }
+
+  .walk-pc-hint {
+    bottom: calc(54px + var(--safe-b));
+  }
+}
+
 /* 尊重「减少动态效果」偏好 */
 @media (prefers-reduced-motion: reduce) {
   *,

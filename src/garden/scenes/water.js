@@ -409,10 +409,18 @@ export function buildWater(ctx) {
       H.latticeWindow({ x: -23, y: 6, z: zz, axis: 'x', w: 3, h: 3, cFrame: C.woodRed, cLattice: C.windowGlow });
       H.latticeWindow({ x: -18, y: 6, z: zz, axis: 'x', w: 3, h: 3, cFrame: C.woodRed, cLattice: C.windowGlow });
     }
-    for (const xx of [-24, -16]) {
+    for (const xx of [-16]) {
       H.latticeWindow({ x: xx, y: 6, z: -62, axis: 'z', w: 3, h: 3, cFrame: C.woodRed, cLattice: C.windowGlow });
       H.latticeWindow({ x: xx, y: 6, z: -59, axis: 'z', w: 3, h: 3, cFrame: C.woodRed, cLattice: C.windowGlow });
     }
+    // 西侧（接竹桥）棂窗改为两窄扇，给中缝留门位；门扇交给 H.door（可开合+步行碰撞）
+    H.latticeWindow({ x: -24, y: 6, z: -62, axis: 'z', w: 1, h: 3, cFrame: C.woodRed, cLattice: C.windowGlow });
+    H.latticeWindow({ x: -24, y: 6, z: -58, axis: 'z', w: 1, h: 3, cFrame: C.woodRed, cLattice: C.windowGlow });
+    H.door({ x: -24, y: 5, z: -61, axis: 'z', w: 3, h: 3, c: C.woodRed, studs: true, hinge: 'left', openTowards: 1, label: '藕香榭' });
+    // 门常开：清掉门扇体素与旧窗框的碰撞占位（精细门扇由 ornaments 渲染），保证步行可入
+    for (let z = -62; z <= -58; z++) for (let y = 5; y <= 8; y++) w.set(-24, y, z, 0);
+    // 室内陈设（螃蟹宴条桌——第 38 回藕香榭赏桂吃蟹）
+    H.furnish({ x: -20, z: -60, y: 5, w: 6, d: 5, h: 4, style: 'dining' });
     eaveBand(bX1, bZ1, bX2, bZ2, 10);
     // 攒尖顶（出檐 2、起翘 2）
     H.roof({ x1: bX1, z1: bZ1, x2: bX2, z2: bZ2, y: 11, h: 3, type: 'pyramid', tile: C.roof, ridge: C.ridge, overhang: 2, upturn: 2 });
@@ -507,7 +515,7 @@ export function buildWater(ctx) {
     }
     borderRocks(islX1, islZ1, islX2, islZ2, 0.22, 1);
     // 沿岸山石（H.rock 落于岸内 2 格处，不悬水）
-    for (const [rx, rz] of [[-4, -23], [21, -31], [17, -38], [6, -38], [13, -18]]) {
+    for (const [rx, rz] of [[-4, -23], [21, -31], [17, -38], [6, -38]]) {
       if (!isW(rx, rz)) H.rock({ x: rx, z: rz, y: 5, size: 1, h: 2, seed: 7 });
     }
 
@@ -547,7 +555,11 @@ export function buildWater(ctx) {
     // 南面前檐：板门居中，两侧槅子窗
     for (let x = 2; x <= 14; x++) for (let y = 6; y <= 8; y++) set(x, y, b1Z2, y === 6 ? C.wallBase : C.plaster);
     for (let x = 6; x <= 10; x++) for (let y = 6; y <= 8; y++) w.set(x, y, b1Z2, 0);
-    H.door({ x: 6, y: 6, z: b1Z2, axis: 'x', w: 5, h: 3, c: C.woodRed, studs: true });
+    H.door({ x: 6, y: 6, z: b1Z2, axis: 'x', w: 5, h: 3, c: C.woodRed, studs: true, hinge: 'left', openTowards: 1, label: '綴錦樓' });
+    // 门常开：清掉门扇体素的碰撞占位（精细门扇由 ornaments 渲染），保证步行可入
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 3; j++) w.set(6 + i, 6 + j, b1Z2, 0);
+    // 室内陈设（一层明间：迎春起居厅堂）
+    H.furnish({ x: 8, z: -29, y: 6, w: 12, d: 8, h: 3.4, style: 'hall' });
     H.latticeWindow({ x: 2, y: 7, z: b1Z2, axis: 'x', w: 3, h: 2, cFrame: C.woodRed, cLattice: C.windowGlow });
     H.latticeWindow({ x: 12, y: 7, z: b1Z2, axis: 'x', w: 3, h: 2, cFrame: C.woodRed, cLattice: C.windowGlow });
     H.latticeWindow({ x: 1, y: 7, z: -33, axis: 'z', w: 3, h: 2, cFrame: C.woodRed, cLattice: C.windowGlow });
@@ -620,7 +632,8 @@ export function buildWater(ctx) {
     // 苇叶成片
     F.reedBed(-5, -38, -4, -20, { count: 10 });
     F.reedBed(20, -38, 23, -22, { count: 10 });
-    F.reedBed(4, -18, 18, -16, { count: 12 });
+    F.reedBed(-5, -18, 2, -16, { count: 6 });
+    F.reedBed(15, -18, 20, -16, { count: 6 });
     // 蓼花 20 丛（粉红花穗，自建）
     let liao = 0, guard = 0;
     while (liao < 20 && guard < 500) {
@@ -631,6 +644,7 @@ export function buildWater(ctx) {
       if (x >= plX1 && x <= plX2 && z >= plZ1 && z <= plZ2) continue;
       if (z >= -18 && z <= -16 && x >= -6 && x <= 4) continue;
       if (z >= -19 && z <= -16 && x >= 14 && x <= 20) continue;
+      if (z >= -19 && z <= -15 && x >= 3 && x <= 14) continue; // 綴錦樓南门前 2m 留空
       if (w.get(x, 5, z) !== 0) continue;
       const n = 1 + (hash(x, z, 31) > 0.55 ? 1 : 0);
       for (let i = 0; i < n; i++) {
@@ -647,6 +661,15 @@ export function buildWater(ctx) {
     // 岛上小径与草花
     for (let z = -18; z <= -17; z++) for (let x = 4; x <= 12; x++) if (!isW(x, z)) set(x, 4, z, hash(x, z, 5) > 0.5 ? C.path3 : C.path2);
     F.grassTuft(20, -20); F.grassTuft(20, -35); F.grassTuft(-4, -18);
+    // 门洞前 2m 空地：清掉踏跺与平台前的山石/花草（保留台阶本体），保证步行可入
+    for (let z = -18; z <= -16; z++) {
+      for (let x = 3; x <= 13; x++) {
+        if (isW(x, z)) continue;
+        if (z === -18 && x >= 5 && x <= 11) continue; // 保留踏步
+        for (let y = 5; y <= 7; y++) if (w.get(x, y, z) !== 0) w.set(x, y, z, 0);
+      }
+    }
+    for (let z = -17; z <= -16; z++) for (let x = 4; x <= 12; x++) if (!isW(x, z)) set(x, 4, z, C.path2);
   }
 
   // ══════════════════════════════════════════════════════════════════════════

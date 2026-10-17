@@ -21,6 +21,7 @@ const NCHUNK = NCX * NCY * NCZ;
 export class World {
   constructor() {
     this.data = new Uint16Array(SIZE);
+    this.hidden = new Uint8Array(SIZE);   // 1 = 仅碰撞/占位，不进入体素网格（被精细网格替换）
     this.chunks = new Uint8Array(NCHUNK);
     this.count = 0;
     this.minX = W; this.maxX = -1;
@@ -47,6 +48,7 @@ export class World {
     if (old === 0 && c !== 0) this.count++;
     else if (old !== 0 && c === 0) this.count--;
     this.data[i] = c;
+    this.hidden[i] = 0;
     if (c !== 0) {
       const cx = (x + OX) >> 4, cy = y >> 4, cz = (z + OZ) >> 4;
       this.chunks[cx + cz * NCX + cy * NCX * NCZ] = 1;
@@ -58,6 +60,27 @@ export class World {
   }
   /** 只在空位放置 */
   setIfEmpty(x, y, z, c) { if (this.get(x, y, z) === 0) { this.set(x, y, z, c); return true; } return false; }
+  /** 标记该体素不再进入体素网格（保留 solid/get 语义，供碰撞与场景逻辑使用） */
+  hide(x, y, z) {
+    x |= 0; y |= 0; z |= 0;
+    if (x < -OX || x >= OX || z < -OZ || z >= OZ || y < 0 || y >= H) return false;
+    this.hidden[(x + OX) + (z + OZ) * W + y * W * D] = 1;
+    return true;
+  }
+  isHidden(x, y, z) {
+    x |= 0; y |= 0; z |= 0;
+    if (x < -OX || x >= OX || z < -OZ || z >= OZ || y < 0 || y >= H) return 0;
+    return this.hidden[(x + OX) + (z + OZ) * W + y * W * D];
+  }
+  /** 体素网格用可见性：被 hide 的体素视为空气 */
+  visible(x, y, z) {
+    x |= 0; y |= 0; z |= 0;
+    if (y < 0) return 0;
+    if (x < -OX || x >= OX || z < -OZ || z >= OZ || y >= H) return 0;
+    const i = (x + OX) + (z + OZ) * W + y * W * D;
+    const v = this.data[i];
+    return v !== 0 && this.hidden[i] === 0 ? v : 0;
+  }
   /** 覆盖式填充长方体（含端点） */
   fill(x1, y1, z1, x2, y2, z2, c) {
     const ax = Math.min(x1, x2) | 0, bx = Math.max(x1, x2) | 0;

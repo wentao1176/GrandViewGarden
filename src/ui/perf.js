@@ -69,6 +69,7 @@ export function initPerf(ctx) {
     set('viewport', `${window.innerWidth}×${window.innerHeight}${dpr}`);
     set('tod', TOD_LABEL[ctx.state.tod] || ctx.state.tod || '—');
     const modes = [];
+    if (ctx.state.mode === 'walk') modes.push('步行');
     if (ctx.state.zen) modes.push('賞景');
     if (ctx.state.tour) modes.push('漫遊');
     if (!modes.length) modes.push('自由');

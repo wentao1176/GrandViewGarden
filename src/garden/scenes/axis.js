@@ -67,7 +67,7 @@ export function buildAxis(ctx) {
     }
     // 门楼主体
     const floorY = base + 3;       // 8
-    const wallH = 4, halfW = 11, zFront = 151, zBack = 140;
+    const wallH = 6, halfW = 11, zFront = 151, zBack = 140;
     // 台基面地坪
     H.box(-halfW + 1, floorY - 1, zBack + 1, halfW - 1, floorY - 1, zFront - 1, C.stoneWarm);
     // 侧墙
@@ -269,7 +269,7 @@ export function buildAxis(ctx) {
     }
     // 桥上亭（四柱攒尖，白石栏，红柱）
     const pav = H.pavilion({
-      x, z, size: 8, y: deckY + 3, plinthH: 1, columnH: 3, roofH: 3,
+      x, z, size: 8, y: deckY + 3, plinthH: 1, columnH: 4, roofH: 4,
       roof: 'pyramid', tile: C.roofLight, railStyle: 'stone', railC: C.marble,
       plaque: '沁芳',
     });
@@ -299,7 +299,7 @@ export function buildAxis(ctx) {
   {
     const x = 0, z = -100;
     const y = gy(x, z) + 1;
-    H.archway({ x, z, dir: 'x', span: 20, h: 12, c: C.marble, plaque: '省親別墅' });
+    H.archway({ x, z, y, dir: 'x', span: 20, h: 14, c: C.marble, plaque: '省親別墅' });
     // 牌坊前御路石雕
     deco(-5, -99, 5, -94, C.marbleShade);
     for (let i = -4; i <= 4; i++) w.set(i, gy(i, -97), -97, C.marble);
@@ -327,7 +327,7 @@ export function buildAxis(ctx) {
     const res = H.hall({
       x, z, bays: 7, bayW: 4, depth: 16, y,
       plinthH: 2, plinthC: C.marbleShade, plinthTop: C.marble,
-      wallH: 5, columnH: 6, roof: 'xieshan', tile: C.glaze, roofH: 4,
+      wallH: 7, columnH: 9, roof: 'xieshan', tile: C.glaze, roofH: 5,
       columns: C.redPillar, wall: C.red, doorC: C.woodRed,
       plaque: '顧恩思義',
       couplets: ['天地啟宏慈', '古今垂曠典'],
@@ -377,7 +377,7 @@ export function buildAxis(ctx) {
     const y = gy(x, z) + 1;
     H.hall({
       x, z, bays: 3, bayW: 4, depth: 9, y, plinthH: 1,
-      wallH: 4, columnH: 4, roof: 'gable', tile: C.roof, roofH: 3,
+      wallH: 5, columnH: 6, roof: 'gable', tile: C.roof, roofH: 4,
       columns: C.redPillar, wall: C.whitewall, doorC: C.woodDark,
       plaque: side < 0 ? '體仁沐德' : '含芳', stepDir: 'south',
       couplets: null,
@@ -400,27 +400,27 @@ export function buildAxis(ctx) {
     const floorY1 = y + 2;
     // 一层：柱、墙、门窗
     for (let b = -2; b <= 2; b++) {
-      for (const zz of [z - halfD, z + halfD]) H.column(x + b * 4, zz, floorY1, 4, C.redPillar);
+      for (const zz of [z - halfD, z + halfD]) H.column(x + b * 4, zz, floorY1, 5, C.redPillar);
     }
     for (let zz = z - halfD + 1; zz <= z + halfD - 1; zz++) {
-      for (let yy = floorY1; yy < floorY1 + 3; yy++) {
+      for (let yy = floorY1; yy < floorY1 + 4; yy++) {
         w.set(x - halfW, yy, zz, C.red);
         w.set(x + halfW, yy, zz, C.red);
       }
     }
     for (let xx = x - halfW; xx <= x + halfW; xx++) {
-      for (let yy = floorY1; yy < floorY1 + 3; yy++) {
+      for (let yy = floorY1; yy < floorY1 + 4; yy++) {
         if (yy === floorY1) w.set(xx, yy, z + halfD, C.wallBase);
         else w.set(xx, yy, z + halfD, ((xx + yy) & 3) === 0 ? C.windowGlow : C.windowGreen);
       }
     }
     // 一层门
-    for (let xx = -3; xx <= 3; xx++) for (let yy = floorY1; yy < floorY1 + 3; yy++) w.set(xx, yy, z + halfD, 0);
-    H.door({ x: -3, y: floorY1, z: z + halfD, axis: 'x', w: 7, h: 3, c: C.woodRed, studs: true });
+    for (let xx = -3; xx <= 3; xx++) for (let yy = floorY1; yy < floorY1 + 4; yy++) w.set(xx, yy, z + halfD, 0);
+    H.door({ x: -3, y: floorY1, z: z + halfD, axis: 'x', w: 7, h: 4, c: C.woodRed, studs: true });
     // 一层腰檐（重檐下层，仅做檐口与两层坡面，不做正脊）
-    H.eaveBand({ x1: x - halfW, z1: z - halfD, x2: x + halfW, z2: z + halfD, y: floorY1 + 3 });
+    H.eaveBand({ x1: x - halfW, z1: z - halfD, x2: x + halfW, z2: z + halfD, y: floorY1 + 4 });
     {
-      const skY = floorY1 + 4;
+      const skY = floorY1 + 5;
       for (let k = 0; k < 3; k++) {
         const ox = halfW + 3 - k, oz = halfD + 4 - k;
         for (let xx = x - ox; xx <= x + ox; xx++) {
@@ -440,8 +440,8 @@ export function buildAxis(ctx) {
       }
       // 腰檐下金色斗拱带
       for (let xx = x - halfW; xx <= x + halfW; xx += 2) {
-        w.set(xx, floorY1 + 3, z + halfD + 1, C.gold);
-        w.set(xx, floorY1 + 3, z - halfD - 1, C.gold);
+        w.set(xx, floorY1 + 4, z + halfD + 1, C.gold);
+        w.set(xx, floorY1 + 4, z - halfD - 1, C.gold);
       }
     }
     // 平座（二层回廊）
@@ -467,26 +467,28 @@ export function buildAxis(ctx) {
     // 二层
     const floorY2 = balconyY + 1;
     for (let b = -2; b <= 2; b++) {
-      for (const zz of [z - halfD, z + halfD]) H.column(x + b * 4, zz, floorY2, 4, C.redPillar);
+      for (const zz of [z - halfD, z + halfD]) H.column(x + b * 4, zz, floorY2, 5, C.redPillar);
     }
     for (let zz = z - halfD + 1; zz <= z + halfD - 1; zz++) {
-      for (let yy = floorY2; yy < floorY2 + 3; yy++) {
+      for (let yy = floorY2; yy < floorY2 + 4; yy++) {
         w.set(x - halfW, yy, zz, C.red);
         w.set(x + halfW, yy, zz, C.red);
       }
     }
     for (let xx = x - halfW; xx <= x + halfW; xx++) {
-      for (let yy = floorY2; yy < floorY2 + 3; yy++) {
+      for (let yy = floorY2; yy < floorY2 + 4; yy++) {
         w.set(xx, yy, z + halfD, ((xx + yy) & 1) === 0 ? C.windowGlow : C.windowGreen);
         w.set(xx, yy, z - halfD, ((xx + yy) & 1) === 0 ? C.windowGlow : C.windowGreen);
       }
     }
-    H.eaveBand({ x1: x - halfW, z1: z - halfD, x2: x + halfW, z2: z + halfD, y: floorY2 + 3 });
-    H.roof({ x1: x - halfW - 1, z1: z - halfD - 1, x2: x + halfW + 1, z2: z + halfD + 1, y: floorY2 + 4, h: 4, type: 'xieshan', tile: C.glaze, overhang: 3, upturn: 2 });
+    H.eaveBand({ x1: x - halfW, z1: z - halfD, x2: x + halfW, z2: z + halfD, y: floorY2 + 4 });
+    H.roof({ x1: x - halfW - 1, z1: z - halfD - 1, x2: x + halfW + 1, z2: z + halfD + 1, y: floorY2 + 5, h: 5, type: 'xieshan', tile: C.glaze, overhang: 3, upturn: 2 });
     // 匾额与楹联（二层南面）
-    H.plaque({ x, y: floorY2 + 3, z: z + halfD + 2, dir: 'south', text: '大觀樓', w: 8, h: 2 });
+    H.plaque({ x, y: floorY2 + 4, z: z + halfD + 2, dir: 'south', text: '大觀樓', w: 8, h: 2 });
     H.couplet({ x: -6, y: floorY2 - 2, z: z + halfD + 2, dir: 'south', text: '天地啟宏慈', w: 1, h: 4 });
     H.couplet({ x: 6, y: floorY2 - 2, z: z + halfD + 2, dir: 'south', text: '九州被恩榮', w: 1, h: 4 });
+    // 一层室内陈设（可入内观赏）
+    H.furnish({ x, z, y: floorY1 + 1, w: 16, d: 9, h: 6, style: 'hall' });
     // 楼前松、玉兰
     for (const [tx, tz] of [[-16, -128], [16, -128], [-20, -136], [20, -136], [-12, -146], [12, -146]]) {
       if (!ctx.isWater(tx, tz)) F.pine(tx, tz, { h: 12 + Math.floor(R() * 5) });

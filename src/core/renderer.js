@@ -70,9 +70,7 @@ void main() {
   vWorld = position;
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   gl_Position = projectionMatrix * mv;
-}`;
-
-const WATER_FRAG = /* glsl */`
+}`;const WATER_FRAG = /* glsl */`
 uniform float uTime;
 uniform vec3 uDeep, uShallow, uSky, uSun, uFogColor;
 uniform vec3 uSunDir;
@@ -99,6 +97,170 @@ void main() {
   col = mix(col, uFogColor, fogF);
   float alpha = mix(0.74 + 0.22 * fres, 1.0, fogF * 0.75);
   gl_FragColor = vec4(col, alpha);
+}`;
+
+// ── 体素材质着色器：程序化瓦垄/粉墙/石纹/木纹/铺地/草地 + 每体素倒角 ────────────
+const VOXEL_VERT = /* glsl */`
+attribute vec3 color;
+attribute float aMat;
+attribute float aFace;
+varying vec3 vColor;
+varying float vMat;
+varying float vFace;
+varying vec3 vWorld;
+varying float vFogDepth;
+void main() {
+  vColor = color;
+  vMat = aMat;
+  vFace = aFace;
+  vec4 wp = modelMatrix * vec4(position, 1.0);
+  vWorld = wp.xyz;
+  vec4 mv = viewMatrix * wp;
+  vFogDepth = -mv.z;
+  gl_Position = projectionMatrix * mv;
+}`;
+
+const VOXEL_FRAG = /* glsl */`
+precision highp float;
+uniform vec3 uFogColor;
+uniform float uFogNear;
+uniform float uFogFar;
+uniform float uTime;
+uniform float uDetail;
+uniform float uGlow;
+varying vec3 vColor;
+varying float vMat;
+varying float vFace;
+varying vec3 vWorld;
+varying float vFogDepth;
+
+float hash21(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+float noise2(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = hash21(i), b = hash21(i + vec2(1.0, 0.0));
+  float c = hash21(i + vec2(0.0, 1.0)), d = hash21(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+vec3 faceNormal(float f) {
+  if (f < 0.5) return vec3(1.0, 0.0, 0.0);
+  if (f < 1.5) return vec3(-1.0, 0.0, 0.0);
+  if (f < 2.5) return vec3(0.0, 1.0, 0.0);
+  if (f < 3.5) return vec3(0.0, -1.0, 0.0);
+  if (f < 4.5) return vec3(0.0, 0.0, 1.0);
+  return vec3(0.0, 0.0, -1.0);
+}
+vec3 lin2srgb(vec3 c) {
+  c = clamp(c, 0.0, 1.0);
+  return mix(1.055 * pow(c, vec3(0.41666)) - 0.055, c * 12.92, step(c, vec3(0.0031308)));
+}
+void main() {
+  vec3 n = faceNormal(vFace);
+  vec3 base = vColor;
+  vec3 wp = vWorld;
+  float det = uDetail;
+  float distFade = clamp(1.0 - vFogDepth / 260.0, 0.0, 1.0);
+  // 木纹
+  if (vMat > 4.5 && vMat < 5.5) {
+    float grain = noise2(vec2(wp.y * 6.0, (wp.x + wp.z) * 2.0));
+    base *= 0.94 + 0.12 * grain;
+    float streak = smoothstep(0.42, 0.5, abs(fract(wp.y * 0.9 + grain * 1.4) - 0.5));
+    base *= 1.0 - 0.12 * streak * det * distFade;
+  }
+  // 瓦面：瓦垄 + 瓦排
+  if (vMat > 3.5 && vMat < 4.5) {
+    float along = abs(n.x) > 0.5 ? wp.z : wp.x;
+    float tile = abs(fract(along / 0.34) - 0.5);
+    base *= 1.0 - 0.16 * smoothstep(0.42, 0.5, tile) * det * distFade;
+    float rowc = wp.y + along * 0.12;
+    base *= 1.0 - 0.08 * smoothstep(0.43, 0.5, abs(fract(rowc / 0.42) - 0.5)) * det * distFade;
+    base *= 0.95 + 0.1 * hash21(floor(vec2(along * 3.0, rowc * 3.0)));
+  }
+  // 粉墙
+  if (vMat > 2.5 && vMat < 3.5) {
+    float plaster = noise2(wp.xz * 2.4 + wp.y * 0.8);
+    base *= 0.965 + 0.07 * plaster;
+    base *= 1.0 + 0.02 * sin((wp.y + wp.x) * 9.0) * det * distFade;
+  }
+  // 石材
+  if (vMat > 5.5 && vMat < 6.5) {
+    float sp = hash21(floor(wp.xz * 9.0) + floor(wp.y * 7.0));
+    base *= 0.94 + 0.12 * sp;
+    float crack = smoothstep(0.03, 0.0, abs(noise2(wp.xz * 1.7 + 4.0) - 0.5));
+    base *= 1.0 - 0.10 * crack * det * distFade;
+  }
+  // 铺地石缝
+  if (vMat > 1.5 && vMat < 2.5) {
+    float jx = abs(fract(wp.x / 0.72) - 0.5);
+    float jz = abs(fract(wp.z / 0.72) - 0.5);
+    float joint = smoothstep(0.44, 0.5, max(jx, jz));
+    base *= 1.0 - 0.22 * joint * det * distFade;
+    base *= 0.95 + 0.10 * hash21(floor(wp.xz * 2.0));
+  }
+  // 草地
+  if (vMat > 0.5 && vMat < 1.5) {
+    float macro = noise2(wp.xz * 0.085 + 3.0);
+    base *= 0.84 + 0.26 * macro;
+    base.g *= 1.035;
+    base.r *= 0.95;
+    float g1 = noise2(wp.xz * 3.2);
+    float g2 = noise2(wp.xz * 12.0 + 7.0);
+    base *= 0.9 + 0.18 * g1;
+    base *= 0.96 + 0.08 * g2;
+    base += 0.012 * smoothstep(0.75, 1.0, g2) * vec3(0.2, 0.38, 0.1);
+  }
+  if (vMat > 8.5 && vMat < 9.5) {
+    base *= 0.92 + 0.16 * noise2(wp.xz * 5.0);
+  }
+  if (vMat > 7.5 && vMat < 8.5) {
+    base *= 0.9 + 0.1 * noise2(wp.xz * 0.7);
+  }
+  // 每体素倒角：边缘压暗 + 极细高光（弱化大方块观感）
+  vec3 f3 = fract(wp);
+  float e1, e2;
+  if (abs(n.y) > 0.5) { e1 = min(f3.x, 1.0 - f3.x); e2 = min(f3.z, 1.0 - f3.z); }
+  else if (abs(n.x) > 0.5) { e1 = min(f3.y, 1.0 - f3.y); e2 = min(f3.z, 1.0 - f3.z); }
+  else { e1 = min(f3.x, 1.0 - f3.x); e2 = min(f3.y, 1.0 - f3.y); }
+  float edge = min(e1, e2);
+  float inside = smoothstep(0.0, 0.10, edge);
+  float organic = (vMat > 0.5 && vMat < 1.5) ? 0.30 : (vMat > 8.5 && vMat < 9.5 ? 0.55 : 1.0);
+  base *= mix(1.0 - 0.20 * organic, 1.0, inside);
+  base += (1.0 - inside) * vec3(0.010) * organic;
+  // 细噪声
+  base *= 0.985 + 0.03 * hash21(wp.xz * 37.0 + wp.y);
+  // 雾
+  float fog = smoothstep(uFogNear, uFogFar, vFogDepth);
+  vec3 col = mix(base, uFogColor, fog);
+  gl_FragColor = vec4(lin2srgb(col), 1.0);
+}`;
+
+const GLOW_FRAG = /* glsl */`
+precision highp float;
+uniform vec3 uFogColor;
+uniform float uFogNear;
+uniform float uFogFar;
+uniform float uTime;
+uniform float uDetail;
+uniform float uGlow;
+varying vec3 vColor;
+varying float vMat;
+varying float vFace;
+varying vec3 vWorld;
+varying float vFogDepth;
+vec3 lin2srgb(vec3 c) {
+  c = clamp(c, 0.0, 1.0);
+  return mix(1.055 * pow(c, vec3(0.41666)) - 0.055, c * 12.92, step(c, vec3(0.0031308)));
+}
+void main() {
+  float flicker = 0.94 + 0.06 * sin(uTime * 2.7 + vWorld.x * 0.9 + vWorld.y * 0.6);
+  vec3 col = vColor * flicker * uGlow;
+  float fog = smoothstep(uFogNear, uFogFar, vFogDepth);
+  col = mix(col, uFogColor, fog * 0.6);
+  gl_FragColor = vec4(lin2srgb(col), 1.0);
 }`;
 
 function radialTexture(inner, outer, size = 128) {
@@ -399,23 +561,49 @@ export class GardenView {
     }
     if (this._glowMesh) {
       this.group.remove(this._glowMesh);
+      this._glowMesh.geometry.dispose();
       this._glowMesh = null;
     }
+    if (!this._voxelUniforms) {
+      this._voxelUniforms = {
+        uFogColor: { value: linColor(TOD.day.fog) },
+        uFogNear: { value: TOD.day.fogNear },
+        uFogFar: { value: TOD.day.fogFar },
+        uTime: { value: 0 },
+        uDetail: { value: this.quality === 'high' ? 1 : this.quality === 'mid' ? 0.55 : 0 },
+        uTint: { value: linColor(TOD.day.tint) },
+        uGlow: { value: TOD.day.glow },
+      };
+    }
+    const U = this._voxelUniforms;
+    U.uDetail.value = this.quality === 'high' ? 1 : this.quality === 'mid' ? 0.55 : 0;
     const makeGeo = (g) => {
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.BufferAttribute(g.position, 3));
       geo.setAttribute('color', new THREE.BufferAttribute(g.color, 3));
+      geo.setAttribute('aMat', new THREE.BufferAttribute(g.mat, 1));
+      geo.setAttribute('aFace', new THREE.BufferAttribute(g.face, 1));
       geo.setIndex(new THREE.BufferAttribute(g.index, 1));
       geo.computeBoundingSphere();
       return geo;
     };
-    this._solidMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: true, toneMapped: false });
+    this._solidMat = new THREE.ShaderMaterial({
+      uniforms: U,
+      vertexShader: VOXEL_VERT,
+      fragmentShader: VOXEL_FRAG,
+      side: THREE.DoubleSide,
+    });
     this._solidMesh = new THREE.Mesh(makeGeo(result.solid), this._solidMat);
     this._solidMesh.frustumCulled = true;
     this._solidMesh.renderOrder = 0;
     this.group.add(this._solidMesh);
     if (result.glow) {
-      this._glowMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: true, toneMapped: false, transparent: true, opacity: 1 });
+      this._glowMat = new THREE.ShaderMaterial({
+        uniforms: U,
+        vertexShader: VOXEL_VERT,
+        fragmentShader: GLOW_FRAG,
+        side: THREE.DoubleSide,
+      });
       this._glowMesh = new THREE.Mesh(makeGeo(result.glow), this._glowMat);
       this._glowMesh.renderOrder = 1;
       this.group.add(this._glowMesh);
@@ -508,9 +696,14 @@ export class GardenView {
     this._sunSprite.material.color.copy(linColor(t.sun));
     this._outerGround.material.color.copy(linColor(t.tint === 0xffffff ? 0x5d7c4c : 0x4b6340));
     this._cloudMat.color.copy(linColor(t.cloud));
-    if (this._solidMat) this._solidMat.color.copy(linColor(t.tint));
-    if (this._glowMat) {
-      this._glowMat.color.setRGB(t.glow, t.glow, t.glow);
+    if (this._voxelUniforms) {
+      const U = this._voxelUniforms;
+      U.uFogColor.value.copy(linColor(t.fog));
+      U.uFogNear.value = t.fogNear;
+      U.uFogFar.value = t.fogFar;
+      U.uTint.value.copy(linColor(t.tint));
+      U.uGlow.value = t.glow;
+      U.uDetail.value = this.quality === 'high' ? 1 : this.quality === 'mid' ? 0.55 : 0;
     }
     if (this._waterUniforms) {
       this._waterUniforms.uDeep.value.copy(rawColor(t.waterDeep));
@@ -548,8 +741,14 @@ export class GardenView {
     mixRaw(this._skyUniforms.uSunColor.value, t.sun);
     this._sunSprite.material.color.lerp(linColor(t.sun), k);
     this._cloudMat.color.lerp(linColor(t.cloud), k);
-    if (this._solidMat) this._solidMat.color.lerp(linColor(t.tint), k);
-    if (this._glowMat) this._glowMat.color.lerp(new THREE.Color(t.glow, t.glow, t.glow), k);
+    if (this._voxelUniforms) {
+      const U = this._voxelUniforms;
+      U.uFogColor.value.lerp(linColor(t.fog), k);
+      U.uFogNear.value = lerp(U.uFogNear.value, t.fogNear, k);
+      U.uFogFar.value = lerp(U.uFogFar.value, t.fogFar, k);
+      U.uTint.value.lerp(linColor(t.tint), k);
+      U.uGlow.value = lerp(U.uGlow.value, t.glow, k);
+    }
     if (this._waterUniforms) {
       mixRaw(this._waterUniforms.uDeep.value, t.waterDeep);
       mixRaw(this._waterUniforms.uShallow.value, t.waterShallow);
@@ -584,6 +783,7 @@ export class GardenView {
   setQuality(q) {
     this.quality = q;
     this.maxPixelRatio = q === 'high' ? 2 : q === 'mid' ? 1.5 : 1.2;
+    if (this._voxelUniforms) this._voxelUniforms.uDetail.value = q === 'high' ? 1 : q === 'mid' ? 0.55 : 0;
     this.resize();
   }
 
@@ -617,7 +817,9 @@ export class GardenView {
 
   _update(dt) {
     this._tweenTod(dt);
+    if (this.preUpdate) this.preUpdate(dt);
     this.controls?.update(dt);
+    if (this._voxelUniforms) this._voxelUniforms.uTime.value = this.time;
     this.sky.position.copy(this.camera.position);
     this.sky.position.y = 0;
     this._stars.position.copy(this.camera.position).setY(0);

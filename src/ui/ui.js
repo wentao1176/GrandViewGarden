@@ -13,6 +13,7 @@ import { initDock } from './dock.js';
 import { initTour } from './tour.js';
 import { initHelp } from './help.js';
 import { initPerf } from './perf.js';
+import { initWalk } from './walk.js';
 import { normalizePoi } from './content.js';
 import { h, on, safe, isTypingTarget } from './util.js';
 
@@ -56,9 +57,22 @@ export function initUI(app) {
       perfOpen: false,
       cardPoi: null,
       activeId: '',
+      mode: 'orbit',
+      walk: null,
     },
     isMobile: () => mq.matches,
   };
+
+  // 触摸环境（步行 HUD 的摇杆/按钮只在触摸设备显示；PC 用键盘）
+  const touchMq = window.matchMedia('(hover: none) and (pointer: coarse)');
+  const narrowMq = window.matchMedia('(max-width: 1024px)');
+  const applyTouchMode = () => {
+    const touch = Boolean(
+      touchMq.matches || ((navigator && navigator.maxTouchPoints > 0) && narrowMq.matches),
+    );
+    body.classList.toggle('is-touch', touch);
+  };
+  applyTouchMode();
 
   /* ── 与主程序通信的薄封装（全部可缺省） ───────────────────── */
   function hasFn(name) {
@@ -94,6 +108,7 @@ export function initUI(app) {
       tour: pick('tour'),
       labels: pick('labels'),
       hidden: pick('hidden'),
+      mode: pick('mode'),
       ready: pick('ready') !== undefined ? pick('ready') : window.GVG && window.GVG.ready,
     };
   };
@@ -168,6 +183,7 @@ export function initUI(app) {
   ctx.ui.tour = initTour(ctx);
   ctx.ui.help = initHelp(ctx);
   ctx.ui.perf = initPerf(ctx);
+  ctx.ui.walk = initWalk(ctx);
 
   /* ── 模块状态回调 ─────────────────────────────────────────── */
   ctx.onPanelStateChange = (open) => {
@@ -206,6 +222,10 @@ export function initUI(app) {
   }
 
   function startTour() {
+    if (ctx.state.mode === 'walk') {
+      ctx.announce('步行模式下不可自動漫遊');
+      return;
+    }
     if (!hasFn('toggleTour')) return;
     hideWelcomeHint();
     ctx.state.tour = true;
@@ -238,6 +258,7 @@ export function initUI(app) {
       if (document.activeElement && root.contains(document.activeElement) && document.activeElement.blur) {
         document.activeElement.blur();
       }
+      if (ctx.state.mode === 'walk') ctx.ui.walk?.reset?.();
     }
     if (!options.silent) {
       if (active) {
@@ -266,9 +287,12 @@ export function initUI(app) {
     if (ctx.state.tour && options.manual) stopTour();
     ctx.state.activeId = poi.id;
     ctx.state.cardPoi = poi;
+    if (ctx.state.mode === 'walk') ctx.ui.walk?.reset?.();
     ctx.ui.card?.open(poi, options);
     ctx.ui.panel?.setActive(poi.id, { scroll: options.scrollPanel !== false });
-    if (ctx.isMobile() && ctx.state.panelOpen) ctx.ui.panel?.setOpen(false, { restoreFocus: false });
+    if ((ctx.isMobile() || ctx.state.mode === 'walk') && ctx.state.panelOpen) {
+      ctx.ui.panel?.setOpen(false, { restoreFocus: false });
+    }
   }
 
   function closeCard() {
@@ -290,15 +314,42 @@ export function initUI(app) {
 
   function flyToGround(x, z) {
     if (!Number.isFinite(x) || !Number.isFinite(z)) return;
+    if (ctx.state.mode === 'walk') {
+      // 步行：优先 walkTeleport；引擎约定步行下 flyToGround 亦等价，再退化到最近景点
+      if (hasFn('walkTeleport')) {
+        const ok = callApp('walkTeleport', x, z);
+        if (ok === false && hasFn('flyToGround')) callApp('flyToGround', x, z);
+        return;
+      }
+      if (hasFn('flyToGround')) {
+        callApp('flyToGround', x, z);
+        return;
+      }
+      let nearest = null;
+      let best = 64;
+      for (const poi of ctx.pois) {
+        if (!Number.isFinite(poi.x) || !Number.isFinite(poi.z)) continue;
+        const dist = Math.hypot(poi.x - x, poi.z - z);
+        if (dist < best) {
+          best = dist;
+          nearest = poi;
+        }
+      }
+      if (nearest) goTo(nearest.id);
+      else ctx.announce('此處暫不可傳送');
+      return;
+    }
     if (hasFn('flyToGround')) callApp('flyToGround', x, z);
   }
 
   function togglePanel() {
     if (!ctx.ui.panel) return;
+    if (ctx.state.mode === 'walk' && !ctx.state.panelOpen) ctx.ui.walk?.reset?.();
     ctx.ui.panel.setOpen(!ctx.state.panelOpen, { restoreFocus: false });
   }
 
   function openHelp() {
+    if (ctx.state.mode === 'walk') ctx.ui.walk?.reset?.();
     ctx.ui.help?.open();
   }
 
@@ -308,6 +359,69 @@ export function initUI(app) {
 
   function togglePerf() {
     ctx.ui.perf?.toggle();
+  }
+
+  /* ── 步行 / 游覽模式 ─────────────────────────────────────── */
+  function readMode() {
+    if (hasFn('getMode')) {
+      const value = safe(() => appRef.getMode(), null);
+      if (value === 'walk' || value === 'orbit') return value;
+    }
+    const state = safe(() => ctx.readAppState(), null);
+    if (state && (state.mode === 'walk' || state.mode === 'orbit')) return state.mode;
+    return appRef.mode === 'walk' ? 'walk' : 'orbit';
+  }
+
+  function applyMode(mode, options = {}) {
+    const target = mode === 'walk' ? 'walk' : 'orbit';
+    const previous = ctx.state.mode;
+    if (target === previous && !options.force) {
+      ctx.ui.dock?.updateMode(target);
+      ctx.ui.walk?.setMode(target);
+      return;
+    }
+    ctx.state.mode = target;
+    body.classList.toggle('walk-mode', target === 'walk');
+    ctx.ui.dock?.updateMode(target);
+    ctx.ui.walk?.setMode(target);
+    if (target === 'walk') {
+      hideWelcomeHint();
+      if (ctx.state.tour) {
+        ctx.state.tour = false;
+        ctx.ui.dock?.updateTour(false);
+        ctx.ui.tour?.hide();
+        callApp('toggleTour');
+      }
+      if (ctx.state.helpOpen) closeHelp();
+      if (ctx.state.cardOpen) closeCard();
+      if (ctx.state.panelOpen) ctx.ui.panel?.setOpen(false, { restoreFocus: false });
+      if (!options.silent) ctx.announce('步行模式：WASD／搖桿移動，E 互動，V 或 Esc 返回遊覽');
+    } else {
+      if (!options.silent) {
+        ctx.announce('已返回遊覽模式');
+        if (!ctx.isMobile()) ctx.ui.panel?.setOpen(true, { focus: false, restoreFocus: false });
+      }
+      ctx.state.walk = null;
+    }
+    ctx.ui.minimap?.refresh();
+  }
+
+  function setWalkMode(mode) {
+    const target = mode === 'walk' ? 'walk' : 'orbit';
+    if (target === ctx.state.mode) return true;
+    if (!hasFn('setMode')) {
+      ctx.announce('步行模式尚未就緒');
+      return false;
+    }
+    const result = callApp('setMode', target);
+    // 引擎明确回绝（返回 orbit）时不切换 UI；返回 walk / undefined 均按成功处理
+    if (target === 'walk' && result === 'orbit') return false;
+    if (ctx.state.mode !== target) applyMode(target);
+    return true;
+  }
+
+  function toggleWalkMode() {
+    return setWalkMode(ctx.state.mode === 'walk' ? 'orbit' : 'walk');
   }
 
   Object.assign(ctx, {
@@ -325,6 +439,8 @@ export function initUI(app) {
     openHelp,
     closeHelp,
     togglePerf,
+    setWalkMode,
+    toggleWalkMode,
   });
 
   /* ── 主程序事件 ───────────────────────────────────────────── */
@@ -394,14 +510,32 @@ export function initUI(app) {
     if (value !== ctx.state.zen) applyZen(value, { silent: true });
   });
 
+  /* ── 步行模式事件 ─────────────────────────────────────────── */
+  ctx.onApp('mode', (payload) => {
+    const mode = payload && typeof payload === 'object' ? payload.mode : payload;
+    if (mode === 'walk' || mode === 'orbit') applyMode(mode);
+  });
+
+  ctx.onApp('walk', (payload) => {
+    ctx.state.walk = payload || null;
+    ctx.ui.walk?.setWalkState(payload);
+  });
+
+  ctx.onApp('interact', (payload) => {
+    ctx.ui.walk?.showInteract(payload || null);
+  });
+
   /* ── 状态同步 ─────────────────────────────────────────────── */
   function applyStateToUI() {
     ctx.ui.dock?.updateTod(ctx.state.tod);
     ctx.ui.dock?.updateTour(ctx.state.tour);
     ctx.ui.dock?.updateLabels(ctx.state.labelsKnown ? ctx.state.labels : null);
+    ctx.ui.dock?.updateMode(ctx.state.mode);
     ctx.ui.tools?.setPanelOpen(ctx.state.panelOpen);
     ctx.ui.tools?.setZen(ctx.state.zen);
     body.classList.toggle('zen', ctx.state.zen);
+    body.classList.toggle('walk-mode', ctx.state.mode === 'walk');
+    ctx.ui.walk?.setMode(ctx.state.mode);
   }
 
   function syncFromApp() {
@@ -413,6 +547,7 @@ export function initUI(app) {
       ctx.state.labelsKnown = true;
     }
     if (typeof state.ready === 'boolean') ctx.state.ready = state.ready;
+    if (state.mode === 'walk' || state.mode === 'orbit') ctx.state.mode = state.mode;
     if (typeof state.hidden === 'boolean' && state.hidden !== ctx.state.zen) {
       applyZen(state.hidden, { silent: true });
     }
@@ -456,6 +591,10 @@ export function initUI(app) {
     }
     if (ctx.state.cardOpen) {
       closeCard();
+      return true;
+    }
+    if (ctx.state.mode === 'walk') {
+      setWalkMode('orbit');
       return true;
     }
     if (ctx.state.zen) {
@@ -511,6 +650,11 @@ export function initUI(app) {
         event.preventDefault();
         toggleLabels();
         break;
+      case 'v':
+      case 'V':
+        event.preventDefault();
+        toggleWalkMode();
+        break;
       case 'h':
       case 'H':
         event.preventDefault();
@@ -533,7 +677,7 @@ export function initUI(app) {
   const onViewportModeChange = (event) => {
     const mobile = Boolean(event.matches);
     body.classList.toggle('is-mobile', mobile);
-    ctx.ui.panel?.setOpen(!mobile, { focus: false, restoreFocus: false });
+    ctx.ui.panel?.setOpen(!mobile && ctx.state.mode !== 'walk', { focus: false, restoreFocus: false });
     ctx.ui.minimap?.refresh();
     if (mobile) hideWelcomeHint();
   };
@@ -546,12 +690,26 @@ export function initUI(app) {
       listenOff.push(() => mq.removeListener(onViewportModeChange));
     } catch { /* ignore */ }
   }
+  try {
+    touchMq.addEventListener('change', applyTouchMode);
+    listenOff.push(() => touchMq.removeEventListener('change', applyTouchMode));
+  } catch {
+    try {
+      touchMq.addListener(applyTouchMode);
+      listenOff.push(() => touchMq.removeListener(applyTouchMode));
+    } catch { /* ignore */ }
+  }
 
   /* ── 初始状态 ─────────────────────────────────────────────── */
   body.classList.toggle('is-mobile', mq.matches);
   refreshPois();
   syncFromApp();
-  ctx.ui.panel?.setOpen(!mq.matches, { focus: false, restoreFocus: false });
+  const initialMode = readMode();
+  ctx.state.mode = initialMode;
+  body.classList.toggle('walk-mode', initialMode === 'walk');
+  ctx.ui.dock?.updateMode(initialMode);
+  ctx.ui.walk?.setMode(initialMode);
+  ctx.ui.panel?.setOpen(!mq.matches && initialMode !== 'walk', { focus: false, restoreFocus: false });
   ctx.ui.dock?.updateLabels(ctx.state.labelsKnown ? ctx.state.labels : true);
   ctx.ui.dock?.updateTour(false);
   ctx.ui.dock?.updateTod(ctx.state.tod);
@@ -592,6 +750,9 @@ export function initUI(app) {
     closeHelp,
     togglePerf,
     flyToGround,
+    setWalkMode,
+    toggleWalkMode,
+    walk: ctx.ui.walk,
     get state() { return ctx.state; },
   };
   window.__GVG_UI__ = api;

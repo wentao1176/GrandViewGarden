@@ -324,7 +324,11 @@ export function buildEast(ctx) {
         }
       }
       const doorW = Math.max(3, bayW - 1);
-      H.door({ x: x - Math.floor(doorW / 2), y: floorY, z: frontZ, axis: 'x', w: doorW, h: Math.max(2, wallH - 1), c: o.doorC ?? C.woodRed, studs: bays >= 5 });
+      const doorH = Math.max(2, wallH - 1);
+      const doorX = x - Math.floor(doorW / 2);
+      H.door({ x: doorX, y: floorY, z: frontZ, axis: 'x', w: doorW, h: doorH, c: o.doorC ?? C.woodRed, studs: bays >= 5, label: o.plaque || o.name || '' });
+      // 门洞内体素清空（helpers 只 hide 不 clear，walker 的 supportY 会把隐藏门扇当支撑而"爬上门头"卡住）
+      w.clear(doorX, floorY, frontZ, doorX + doorW - 1, floorY + doorH - 1, frontZ);
       // 两次间槛窗棂格
       for (let d = -1; d <= 1; d += 2) {
         const wx = x + d * bayW - Math.floor((bayW - 2) / 2);
@@ -438,6 +442,8 @@ export function buildEast(ctx) {
     });
     // 匾（檐下金匾）
     H.plaque({ x: 59, y: hall.floorY + 3, z: hall.z2 + 1, dir: 'south', text: '怡紅快綠', w: 7, h: 2, boardColor: C.plaqueBoard, textColor: C.goldText });
+    // 室内陈设（H.furnish → 精细家具网格；正房五间：厅堂布局）
+    H.furnish({ x: 59, z: 26, y: hall.floorY, w: 14, d: 6.5, h: 3.6, style: 'hall' });
     // 室内玻璃镜意象（背屏）：浅蓝玻璃 + 墨框
     for (let xx = 54; xx <= 64; xx++) for (let yy = hall.floorY; yy < hall.floorY + 3; yy++) {
       set(xx, yy, hall.z1 + 1, (xx === 54 || xx === 64 || yy === hall.floorY) ? C.ink : C.stoneBlue);
@@ -578,6 +584,8 @@ export function buildEast(ctx) {
     H.plaque({ x: 94, y: fy + 3, z: hall.colFrontZ + 1, dir: 'south', text: '曉翠堂', w: 7, h: 2, boardColor: C.plaqueBoard, textColor: C.goldText });
     H.couplet({ x: 94 - 7, y: fy, z: hall.colFrontZ + 1, dir: 'south', text: '煙霞閑骨格', w: 1, h: 4.6 });
     H.couplet({ x: 94 + 7, y: fy, z: hall.colFrontZ + 1, dir: 'south', text: '泉石野生涯', w: 1, h: 4.6 });
+    // 室内陈设（通间书斋：书案/书架/琴/瓶）
+    H.furnish({ x: 94, z: -33.2, y: fy, w: 12, d: 4.2, h: 3.6, style: 'study' });
     // 前廊柱间挂落（卷棚出廊）
     for (let xx = 94 - 7; xx <= 94 + 7; xx++) {
       if (xx === 94 - 7 || xx === 94 + 7) continue;
@@ -657,6 +665,8 @@ export function buildEast(ctx) {
       plinthC: C.stone, plinthTop: C.stoneLight,
     });
     H.plaque({ x: 55, y: hall.floorY + 3, z: hall.z2 + 1, dir: 'south', text: '蓼風軒', w: 6, h: 2, boardColor: C.plaqueBoard, textColor: C.goldText });
+    // 室内陈设（暖香坞：卧房布局）
+    H.furnish({ x: 55, z: -77, y: hall.floorY, w: 9, d: 4.5, h: 3.2, style: 'bedroom' });
     // ── 暖香坞（东侧卧房之门斗，题匾）───────────────────────────────────────
     {
       // 门斗：贴正房东端前廊，门朝南；台基与正房台基同高（y=Y 一层）
@@ -832,6 +842,8 @@ export function buildEast(ctx) {
     // 匾「滴翠亭」（南面朝园路，另于东门上方题小匾）
     H.plaque({ x: cx, y: eaveY - 3, z: cz + hh + 1, dir: 'south', text: '滴翠亭', w: 6, h: 2, boardColor: C.plaqueBoard, textColor: C.goldText });
     H.plaque({ x: -18, y: eaveY - 3, z: cz, dir: 'east', text: '滴翠亭', w: 5, h: 2, boardColor: C.plaqueBoard, textColor: C.goldText });
+    // 亭内陈设（石桌凳意象 → 精细餐桌茶具；亭内净空 8×8、走道留 1.5m）
+    H.furnish({ x: cx, z: cz, y: colY, w: 6, d: 6, h: 3, style: 'dining' });
     // ── 亭周荷叶、岸上垂柳与山石（亭周 4 格内清空树石，留出桥/踏步视线）──────
     F.lotus(cx, 2, 8, 3, { count: 20, flowers: 2 });
     F.lotus(cx + 1, 24, 8, 3, { count: 18, flowers: 2 });

@@ -17,8 +17,8 @@ const AX = [
 ];
 
 function gather(world) {
-  const solid = { pos: [], col: [], idx: [] };
-  const glow = { pos: [], col: [], idx: [] };
+  const solid = { pos: [], col: [], idx: [], mat: [], face: [] };
+  const glow = { pos: [], col: [], idx: [], mat: [], face: [] };
   let quads = 0, glowQuads = 0;
   const mask = new Int32Array(CH * CH);
   const used = new Uint8Array(CH * CH);
@@ -31,6 +31,7 @@ function gather(world) {
     const ao = [(key >> 14) & 3, (key >> 16) & 3, (key >> 18) & 3, (key >> 20) & 3];
     const pal = PALETTE[colorIdx];
     if (!pal) return;
+    const faceId = d * 2 + (sign > 0 ? 0 : 1);
     const shade = d === 0 ? (sign > 0 ? SHADE.xp : SHADE.xn)
       : d === 1 ? (sign > 0 ? SHADE.yp : SHADE.yn)
         : (sign > 0 ? SHADE.zp : SHADE.zn);
@@ -48,6 +49,8 @@ function gather(world) {
       else if (d === 1) { vtx[0] = uu; vtx[1] = plane; vtx[2] = vv; }
       else { vtx[0] = uu; vtx[1] = vv; vtx[2] = plane; }
       P.push(vtx[0], vtx[1], vtx[2]);
+      target.mat.push(pal.mat || 0);
+      target.face.push(faceId);
       if (isGlow) {
         // 自发光：明亮、无 AO/阴影
         Cl.push(Math.min(1, s2l(Math.min(1, baseR * 1.28)) * 1.15),
@@ -62,11 +65,11 @@ function gather(world) {
     I.push(baseIndex, baseIndex + 2, baseIndex + 1, baseIndex, baseIndex + 3, baseIndex + 2);
   };
 
-  // 轴空间 → 世界坐标采样
+  // 轴空间 → 世界坐标采样（隐藏体素视为空气，供网格化与 AO 使用）
   const solidAt = (d, dd, uu, vv) => {
-    if (d === 0) return world.solid(dd, uu, vv) ? 1 : 0;
-    if (d === 1) return world.solid(uu, dd, vv) ? 1 : 0;
-    return world.solid(uu, vv, dd) ? 1 : 0;
+    if (d === 0) return world.visible(dd, uu, vv) ? 1 : 0;
+    if (d === 1) return world.visible(uu, dd, vv) ? 1 : 0;
+    return world.visible(uu, vv, dd) ? 1 : 0;
   };
 
   const aoFor = (d, airD, u, v) => {
@@ -101,9 +104,9 @@ function gather(world) {
               for (let ui = 0; ui < CH; ui++) {
                 const u = baseU + ui, v = baseV + vi;
                 let c1, c2;
-                if (d === 0) { c1 = world.get(d0, u, v); c2 = world.get(d0 + 1, u, v); }
-                else if (d === 1) { c1 = world.get(u, d0, v); c2 = world.get(u, d0 + 1, v); }
-                else { c1 = world.get(u, v, d0); c2 = world.get(u, v, d0 + 1); }
+                if (d === 0) { c1 = world.visible(d0, u, v); c2 = world.visible(d0 + 1, u, v); }
+                else if (d === 1) { c1 = world.visible(u, d0, v); c2 = world.visible(u, d0 + 1, v); }
+                else { c1 = world.visible(u, v, d0); c2 = world.visible(u, v, d0 + 1); }
                 let key = 0;
                 if (c1 && !c2) {
                   const pal = PALETTE[c1];
@@ -173,6 +176,8 @@ function toGeometry(t) {
   return {
     position: new Float32Array(t.pos),
     color: new Float32Array(t.col),
+    mat: new Uint8Array(t.mat),
+    face: new Uint8Array(t.face),
     index: new Uint32Array(t.idx),
     quads: t.idx.length / 6,
   };

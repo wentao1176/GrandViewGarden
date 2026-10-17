@@ -1,6 +1,8 @@
 # 大观园 3D 体素项目 · 引擎与协作契约（v1）
 
 > 所有成员必读。**先读 `docs/research.md`**（考据依据）与 `src/garden/layout.js`（唯一坐标依据）。
+>
+> **Phase 2 已升级**：新增 `src/garden/ornaments.js`、`src/garden/foliage.js`、`src/core/water.js`、`src/core/water-shader.js`、`src/core/walker.js`、`src/core/doors.js`、`src/ui/walk.js`，并扩展 `ctx.postBuild / ctx.animators / ctx.details`、world 隐藏体素、体素材质属性与第一人称步行 API。详见 [`phase2-api.md`](phase2-api.md)。
 
 ## 0. 总则
 

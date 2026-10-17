@@ -60,6 +60,43 @@ for (const [name, hex, opt] of DEFS) {
   C[name] = idx;
 }
 
+// ── 材质分类（供体素材质着色器做程序化细节：瓦垄/粉墙/石纹/木纹/砖缝等）──────
+export const MAT = {
+  DEFAULT: 0, GRASS: 1, PATH: 2, WALL: 3, ROOF: 4, WOOD: 5,
+  STONE: 6, METAL: 7, WATERBED: 8, PLANT: 9, TEXTILE: 10, PAPER: 11,
+};
+const MAT_BY_NAME = {
+  grass: MAT.GRASS, grass2: MAT.GRASS, grass3: MAT.GRASS, grassDry: MAT.GRASS,
+  dirt: MAT.GRASS, dirt2: MAT.GRASS, dirt3: MAT.GRASS, soil: MAT.GRASS, soilDark: MAT.GRASS,
+  farm: MAT.GRASS, vegetable: MAT.PLANT, rice: MAT.PLANT, mossRock: MAT.GRASS,
+  path: MAT.PATH, path2: MAT.PATH, path3: MAT.PATH, pebble: MAT.PATH, pebbleDark: MAT.PATH,
+  marble: MAT.STONE, marbleShade: MAT.STONE, bankStone: MAT.STONE,
+  stone: MAT.STONE, stoneLight: MAT.STONE, stoneDark: MAT.STONE, stoneWarm: MAT.STONE, stoneBlue: MAT.STONE,
+  rock: MAT.STONE, rockDark: MAT.STONE, rockLight: MAT.STONE, taihu: MAT.STONE, rockGarden: MAT.STONE, rockGarden2: MAT.STONE,
+  whitewall: MAT.WALL, whitewallShade: MAT.WALL, wallBase: MAT.STONE, plaster: MAT.WALL,
+  roof: MAT.ROOF, roofDark: MAT.ROOF, roofLight: MAT.ROOF, roofEdge: MAT.ROOF, ridge: MAT.ROOF, ridgeLight: MAT.ROOF,
+  glaze: MAT.ROOF, glazeLight: MAT.ROOF, glazeDark: MAT.ROOF, glazeGreen: MAT.ROOF, glazeGreenLight: MAT.ROOF,
+  red: MAT.WOOD, redDark: MAT.WOOD, redLight: MAT.WOOD, redPillar: MAT.WOOD, redRail: MAT.WOOD,
+  greenPillar: MAT.WOOD, greenPaint: MAT.WOOD, teal: MAT.TEXTILE, blue: MAT.TEXTILE, blueLight: MAT.TEXTILE,
+  gold: MAT.METAL, goldDark: MAT.METAL, bronze: MAT.METAL, bronzeDark: MAT.METAL,
+  wood: MAT.WOOD, woodDark: MAT.WOOD, woodLight: MAT.WOOD, woodRed: MAT.WOOD, latticeDark: MAT.WOOD,
+  windowGreen: MAT.PAPER, windowGlow: MAT.PAPER, curtain: MAT.TEXTILE, cushion: MAT.TEXTILE, silkPink: MAT.TEXTILE,
+  plaqueBoard: MAT.WOOD, goldText: MAT.METAL, ink: MAT.WOOD,
+  bambooStalk: MAT.PLANT, bambooNode: MAT.PLANT, bambooLeaf: MAT.PLANT, bambooLeaf2: MAT.PLANT, bambooLeaf3: MAT.PLANT,
+  leaf: MAT.PLANT, leafDark: MAT.PLANT, leafLight: MAT.PLANT, leafYellow: MAT.PLANT,
+  willow: MAT.PLANT, willow2: MAT.PLANT, pine: MAT.PLANT, pineLight: MAT.PLANT, pineDark: MAT.PLANT,
+  apricot: MAT.PLANT, apricot2: MAT.PLANT, peach: MAT.PLANT, crabapple: MAT.PLANT, plumRed: MAT.PLANT, plumWhite: MAT.PLANT,
+  peony: MAT.PLANT, peony2: MAT.PLANT, lotusFlower: MAT.PLANT, chrys: MAT.PLANT,
+  thatch: MAT.PLANT, thatchDark: MAT.PLANT, straw: MAT.PLANT, reed: MAT.PLANT, reed2: MAT.PLANT,
+  lotusPad: MAT.PLANT, lotusPad2: MAT.PLANT, lotusPad3: MAT.PLANT,
+  waterBed: MAT.WATERBED, waterBed2: MAT.WATERBED, waterBed3: MAT.WATERBED,
+  paper: MAT.PAPER, lamp: MAT.PAPER, lampWarm: MAT.PAPER, lampRed: MAT.PAPER, windowGlow2: MAT.PAPER,
+};
+for (const p of PALETTE) {
+  if (p) p.mat = MAT_BY_NAME[p.name] ?? MAT.DEFAULT;
+}
+export function matOf(idx) { const p = PALETTE[idx]; return p ? p.mat : MAT.DEFAULT; }
+
 // 常用色组，供生成器随机撒点
 export const GROUPS = {
   grass: [C.grass, C.grass2, C.grass3, C.grassDry],

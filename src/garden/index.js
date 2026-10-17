@@ -33,7 +33,7 @@ export const POIS_MERGED = POIS.map((p) => ({ ...p, ...(POI_CONTENT[p.id] || {})
 
 const tick = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
 
-export async function buildGarden(world, onProgress = () => {}) {
+export async function buildGarden(world, onProgress = () => {}, opts = {}) {
   const R = mulberry32(0x20240A17);
   const decals = [];
   const reservedMask = new Uint8Array(W * D);
@@ -45,6 +45,14 @@ export async function buildGarden(world, onProgress = () => {}) {
     L: null,
     R,
     decals,
+    isMobile: !!opts.isMobile,
+    quality: opts.quality || 'high',
+    postBuild: [],
+    animators: [],
+    details: {
+      roofs: [], columns: [], lattices: [], railings: [], doors: [],
+      furniture: [], lanterns: [], banners: [], misc: [],
+    },
     reserve(x1, z1, x2, z2, margin = 2) {
       reserveRects.push([x1, z1, x2, z2]);
       const ax = Math.max(-OX, Math.round(x1) - margin), bx = Math.min(OX - 1, Math.round(x2) + margin);
@@ -74,7 +82,18 @@ export async function buildGarden(world, onProgress = () => {}) {
   onProgress({ p: 0.14, text: '铺陈院宇…' });
   await tick();
   ctx.H = createHelpers(ctx);
-  ctx.F = createFlora(ctx);
+  // 并发开发期容错：植被模块可能正在重写；缺方法时降级为空操作，避免整园构建失败
+  let floraObj = null;
+  try { floraObj = createFlora(ctx); } catch (e) { console.error('[flora]', e); }
+  const noop = () => undefined;
+  ctx.F = new Proxy(floraObj && typeof floraObj === 'object' ? floraObj : {}, {
+    get(t, k) {
+      const v = t[k];
+      if (v !== undefined) return v;
+      if (k === 'scatterGarden') return noop;
+      return noop;
+    },
+  });
 
   // ── 场景 ─────────────────────────────────────────────────────────────────
   onProgress({ p: 0.2, text: '雕甍绣槛…' });
@@ -113,7 +132,12 @@ export async function buildGarden(world, onProgress = () => {}) {
   // ── 题额匾联 ─────────────────────────────────────────────────────────────
   onProgress({ p: 0.7, text: '研墨题额…' });
   await tick();
-  return { terrain, decals, reserveRects, cleaned };
+  return {
+    terrain, decals, reserveRects, cleaned, ctx,
+    postBuild: ctx.postBuild,
+    animators: ctx.animators,
+    details: ctx.details,
+  };
 
   function cleanWaterVegetation(c) {
     const plantColors = new Set([
