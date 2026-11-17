@@ -1332,6 +1332,36 @@ a:focus-visible,
   display: none;
 }
 
+/* ── ICP 备案（底部极简，位于控制条下方）─────────────────────────────── */
+.icp-footer {
+  position: absolute;
+  left: 50%;
+  bottom: calc(2px + var(--safe-b));
+  transform: translateX(-50%);
+  z-index: 31;
+  padding: 1px 6px;
+  font-family: var(--sans, var(--serif));
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+  color: rgba(239, 230, 210, 0.52);
+  white-space: nowrap;
+  pointer-events: auto;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  transition: color 0.2s ease;
+}
+
+.icp-footer a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.icp-footer a:hover,
+.icp-footer a:focus-visible {
+  color: var(--gold, #d8b64b);
+  text-decoration: underline;
+}
+
 .dock-btn {
   display: inline-flex;
   align-items: center;
@@ -2353,7 +2383,7 @@ kbd {
 
   /* 底部控制条：图标化，按钮 ≥40px */
   .dock {
-    bottom: calc(10px + var(--safe-b));
+    bottom: calc(22px + var(--safe-b));
     gap: 0;
     padding: 4px;
     max-width: calc(100vw - 8px);

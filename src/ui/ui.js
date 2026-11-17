@@ -185,6 +185,27 @@ export function initUI(app) {
   ctx.ui.perf = initPerf(ctx);
   ctx.ui.walk = initWalk(ctx);
 
+  /* ── ICP 备案信息（底部固定，赏景/隐藏 UI 时随 #ui-root 一起隐藏）── */
+  const icpFooter = h(
+    'div',
+    { class: 'icp-footer', attrs: { role: 'contentinfo', 'aria-label': 'ICP 备案信息' } },
+    h(
+      'a',
+      {
+        class: 'icp-link',
+        attrs: {
+          href: 'https://beian.miit.gov.cn/',
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          title: '工业和信息化部 ICP/IP 地址/域名信息备案管理系统',
+        },
+      },
+      '湘ICP备2026053238号-2',
+    ),
+  );
+  ctx.root.appendChild(icpFooter);
+
+
   /* ── 模块状态回调 ─────────────────────────────────────────── */
   ctx.onPanelStateChange = (open) => {
     ctx.state.panelOpen = Boolean(open);

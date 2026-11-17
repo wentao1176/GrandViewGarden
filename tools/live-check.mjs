@@ -27,6 +27,13 @@ try {
     orn: !!window.GVG?.orn,
     mode: window.GVG?.app?.getMode?.(),
     hasCNAME: !!document.querySelector('link[rel="canonical"]'),
+    icp: (() => {
+      const el = document.querySelector('.icp-footer');
+      if (!el) return null;
+      const cs = getComputedStyle(el);
+      const a = el.querySelector('a');
+      return { text: el.textContent.trim(), href: a ? a.href : '', visible: cs.display !== 'none' && cs.visibility !== 'hidden', opacity: cs.opacity };
+    })(),
   }));
   await page.screenshot({ path: 'ref/qa/live-deploy.png' });
   console.log(JSON.stringify({ url, info, external, errors }, null, 2));
