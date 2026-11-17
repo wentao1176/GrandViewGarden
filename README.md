@@ -3,8 +3,9 @@
 > 依《红楼梦》原文与红学考据复原的**大观园三维体素园林**。纯前端、零依赖后端、单文件可离线打开，PC 与移动端浏览器均可漫游。
 
 **在线访问**：
-- 自定义域名（CNAME）：**https://grandviewgarden.xuanwentao.cn/**
-- GitHub Pages 默认地址：**https://wentao1176.github.io/GrandViewGarden/**（Settings → Pages 选择 `main` 分支根目录启用）
+- **Aliyun + Nginx（主站）**：**https://grandviewgarden.wentaox.cn/**
+- GitHub Pages / 自定义域名：https://grandviewgarden.xuanwentao.cn/ · https://wentao1176.github.io/GrandViewGarden/
+- 部署与运维见 [`deploy/README.md`](deploy/README.md)
 
 **本地打开**：直接双击仓库根目录的 `index.html`（无需服务器、无需联网），或用 `npm run dev` 起本地服务。
 
@@ -98,8 +99,9 @@ docs/
   engine-api.md         引擎与协作契约（坐标、API、规则）
   phase2-api.md         HD 升级协作契约（材质/构件/植被/水系/步行/性能预算）
   screenshots/          效果截图（README 用）
-tools/                  预览/全量审查截图工具（puppeteer-core + 本机 Chrome）
+tools/                  预览/全量审查/步行/线上验证工具（puppeteer-core + 本机 Chrome）
 scripts/                构建（单文件内联）与开发服务器
+deploy/                 Aliyun 部署配置与说明（Nginx 反代 + Certbot）
 ```
 
 ## 四、开发与构建
